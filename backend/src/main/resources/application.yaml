@@ -43,9 +43,8 @@ spring:
   security:
     jwt:
       secret-key: ${JWT_SECRET_KEY}
-      issuer: utnet
+      issuer: ubes-web
       access-expiration: 86400000
-      registration-expiration: 900000
 
   google:
     client-id: ${GOOGLE_CLIENT_ID}
