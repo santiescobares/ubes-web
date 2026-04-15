@@ -56,3 +56,19 @@ spring:
     buckets:
       private: ${R2_PRIVATE_BUCKET}
       public: ${R2_PUBLIC_BUCKET}
+
+  logging:
+    file:
+      name: logs/backend.log
+    pattern:
+      file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [TraceID: %X{traceId}] %logger{36} - %msg%n"
+      console: "%clr(%d{yyyy-MM-dd HH:mm:ss}){faint} %clr([%thread]) %clr(%-5level) %clr([TraceID: %X{traceId}]){magenta} %clr(%logger{36}){cyan} - %msg%n"
+    level:
+      dev.santiescobares.ubesweb: INFO
+      org.springframework: WARN
+      org.hibernate: WARN
+    logback:
+      rollingpolicy:
+        max-file-size: 10MB
+        max-history: 30
+        total-size-cap: 2GB
