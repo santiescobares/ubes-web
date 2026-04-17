@@ -2,8 +2,12 @@ package dev.santiescobares.ubesweb.exception;
 
 public enum ErrorCode {
     INVALID_OPERATION,
+    UNAUTHORIZED_OPERATION,
     RESOURCE_NOT_FOUND,
-    RESOURCE_ALREADY_EXISTS;
+    RESOURCE_ALREADY_EXISTS,
+    THIRD_PARTY_EXCEPTION,
+    INVALID_TOKEN,
+    INACTIVE_USER;
 
     @Override
     public String toString() {
