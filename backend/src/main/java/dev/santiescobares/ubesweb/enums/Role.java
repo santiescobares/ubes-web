@@ -30,4 +30,8 @@ public enum Role {
     USER(RoleAuthority.NONE);
 
     private final RoleAuthority authority;
+
+    public boolean surpasses(Role other) {
+        return ordinal() < other.ordinal();
+    }
 }

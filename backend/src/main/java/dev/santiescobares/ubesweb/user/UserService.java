@@ -5,29 +5,50 @@ import dev.santiescobares.ubesweb.Global;
 import dev.santiescobares.ubesweb.auth.token.TokenException;
 import dev.santiescobares.ubesweb.auth.token.TokenService;
 import dev.santiescobares.ubesweb.auth.token.TokenType;
+import dev.santiescobares.ubesweb.config.S3Config;
+import dev.santiescobares.ubesweb.context.RequestContextData;
 import dev.santiescobares.ubesweb.context.RequestContextHolder;
 import dev.santiescobares.ubesweb.enums.ResourceType;
 import dev.santiescobares.ubesweb.enums.Role;
+import dev.santiescobares.ubesweb.enums.RoleAuthority;
+import dev.santiescobares.ubesweb.exception.type.InvalidOperationException;
 import dev.santiescobares.ubesweb.exception.type.ResourceNotFoundException;
+import dev.santiescobares.ubesweb.service.StorageService;
 import dev.santiescobares.ubesweb.user.dto.UserCreateDTO;
 import dev.santiescobares.ubesweb.user.dto.UserDTO;
+import dev.santiescobares.ubesweb.user.dto.UserPictureDTO;
+import dev.santiescobares.ubesweb.user.dto.UserUpdateDTO;
 import dev.santiescobares.ubesweb.user.event.UserCreateEvent;
-import jakarta.transaction.Transactional;
+import dev.santiescobares.ubesweb.user.event.UserDeleteEvent;
+import dev.santiescobares.ubesweb.user.event.UserUpdateEvent;
+import dev.santiescobares.ubesweb.util.FileUtil;
+import dev.santiescobares.ubesweb.util.ImageUtil;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import static dev.santiescobares.ubesweb.Global.*;
+
 @Service
 @RequiredArgsConstructor
 public class UserService {
 
+    private static final long MAX_PICTURE_FILE_SIZE = 10_485_760;
+    private static final int PICTURE_SIZE = 256;
+
     private final TokenService tokenService;
+    private final StorageService storageService;
 
     private final UserRepository userRepository;
 
@@ -36,6 +57,8 @@ public class UserService {
     private final StringRedisTemplate redisTemplate;
 
     private final ApplicationEventPublisher eventPublisher;
+
+    private final S3Config s3Config;
 
     @Transactional
     public UserDTO createUser(UserCreateDTO dto) {
@@ -78,6 +101,81 @@ public class UserService {
         return userMapper.toDTO(user);
     }
 
+    @Transactional
+    public UserDTO updateUser(UUID id, UserUpdateDTO dto) {
+        if (id != null) {
+            checkCanModifyUser(id);
+        } else {
+            id = RequestContextHolder.getCurrentSession().userId();
+        }
+
+        User user = getById(id);
+        userMapper.updateFromDTO(user, dto);
+
+        if (dto.school() != null && RequestContextHolder.getCurrentSession().role().surpasses(user.getRole())) {
+            user.setSchool(dto.school());
+        }
+
+        eventPublisher.publishEvent(new UserUpdateEvent(user));
+
+        return userMapper.toDTO(user);
+    }
+
+    public UserPictureDTO updateUserPicture(UUID id, MultipartFile pictureFile) {
+        if (id != null) {
+            checkCanModifyUser(id);
+        } else {
+            id = RequestContextHolder.getCurrentSession().userId();
+        }
+
+        User user = getById(id);
+        String pictureURL;
+
+        if (pictureFile != null && !pictureFile.isEmpty()) {
+            FileUtil.validateExtension(pictureFile, ImageUtil.IMAGE_FORMATS);
+            FileUtil.validateSize(pictureFile, MAX_PICTURE_FILE_SIZE);
+
+            MultipartFile resizedFile;
+            try {
+                resizedFile = ImageUtil.resize(pictureFile, PICTURE_SIZE, PICTURE_SIZE);
+            } catch (IOException e) {
+                throw new RuntimeException("An internal error ocurred while trying to resize an image");
+            }
+
+            String pictureKey = storageService.uploadFile(resizedFile, s3Config.getPublicBucket(), R2_USER_PICTURES_PATH);
+
+            user.setPictureKey(pictureKey);
+            pictureURL = R2_PUBLIC_URL + "/" + pictureKey;
+        } else {
+            user.setPictureKey(null);
+            pictureURL = null;
+        }
+
+        return new UserPictureDTO(pictureURL);
+    }
+
+    @Transactional
+    public void deleteUser(HttpServletRequest request, HttpServletResponse response) {
+        User user = getCurrentUser();
+        if (user.isDeleted()) {
+            throw new InvalidOperationException("User is already deleted");
+        }
+
+        userRepository.delete(user);
+
+        eventPublisher.publishEvent(new UserDeleteEvent(user, request, response));
+    }
+
+    @Transactional(readOnly = true)
+    public UserDTO getUserDTO(UUID id) {
+        if (id != null) {
+            checkCanModifyUser(id);
+        } else {
+            id = RequestContextHolder.getCurrentSession().userId();
+        }
+        return userMapper.toDTO(getById(id));
+    }
+
     private Optional<User> findById(UUID id) {
         return userRepository.findById(id);
     }
@@ -96,5 +194,12 @@ public class UserService {
 
     public Optional<User> findByGoogleId(String googleId) {
         return userRepository.findByGoogleId(googleId);
+    }
+
+    private void checkCanModifyUser(UUID userId) {
+        RequestContextData contextData = RequestContextHolder.getCurrentSession();
+        if (!userId.equals(contextData.userId()) && contextData.role().getAuthority() != RoleAuthority.EXECUTIVE) {
+            throw new InvalidOperationException("Can't perform that operation");
+        }
     }
 }

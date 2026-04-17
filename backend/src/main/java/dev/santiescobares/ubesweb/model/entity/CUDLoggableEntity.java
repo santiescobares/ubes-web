@@ -24,8 +24,4 @@ public abstract class CUDLoggableEntity {
     public boolean isDeleted() {
         return deletedAt != null;
     }
-
-    public void delete() {
-        deletedAt = Instant.now();
-    }
 }

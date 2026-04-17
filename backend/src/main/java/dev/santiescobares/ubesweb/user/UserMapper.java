@@ -15,6 +15,7 @@ public interface UserMapper {
     @Mapping(source = "pictureKey", target = "pictureURL", qualifiedByName = "pictureKeyToURL")
     UserSnapshotDTO toSnapshotDTO(User user);
 
+    @Mapping(target = "school", ignore = true)
     void updateFromDTO(@MappingTarget User user, UserUpdateDTO dto);
 
     @Named("pictureKeyToURL")
