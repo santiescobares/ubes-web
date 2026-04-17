@@ -2,7 +2,7 @@ package dev.santiescobares.ubesweb.user;
 
 import dev.santiescobares.ubesweb.enums.Role;
 import dev.santiescobares.ubesweb.enums.School;
-import dev.santiescobares.ubesweb.model.loggable.CUDLoggableEntity;
+import dev.santiescobares.ubesweb.model.entity.CUDLoggableEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,6 +12,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "users", indexes = {
+        @Index(name = "idx_user_emails", columnList = "email"),
         @Index(name = "idx_user_google_ids", columnList = "google_id")
 })
 @Getter
