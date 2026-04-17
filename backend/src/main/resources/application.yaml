@@ -1,4 +1,7 @@
 spring:
+  threads:
+    virtual:
+      enabled: true
   servlet:
     multipart:
       max-file-size: 20MB
@@ -45,6 +48,7 @@ spring:
       secret-key: ${JWT_SECRET_KEY}
       issuer: ubes-web
       access-expiration: 86400000
+      registration-expiration: 900000
 
   google:
     client-id: ${GOOGLE_CLIENT_ID}
