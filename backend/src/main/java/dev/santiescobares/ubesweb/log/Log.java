@@ -2,7 +2,7 @@ package dev.santiescobares.ubesweb.log;
 
 import dev.santiescobares.ubesweb.enums.ResourceType;
 import dev.santiescobares.ubesweb.log.enums.Action;
-import dev.santiescobares.ubesweb.model.loggable.CLoggableEntity;
+import dev.santiescobares.ubesweb.model.entity.CLoggableEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

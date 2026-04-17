@@ -1,4 +1,4 @@
-package dev.santiescobares.ubesweb.model.loggable;
+package dev.santiescobares.ubesweb.model.entity;
 
 import jakarta.persistence.MappedSuperclass;
 import lombok.Getter;

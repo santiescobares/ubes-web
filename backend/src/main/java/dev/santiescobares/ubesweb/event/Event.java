@@ -2,7 +2,7 @@ package dev.santiescobares.ubesweb.event;
 
 import dev.santiescobares.ubesweb.event.enums.EventType;
 import dev.santiescobares.ubesweb.model.Location;
-import dev.santiescobares.ubesweb.model.loggable.CULoggableEntity;
+import dev.santiescobares.ubesweb.model.entity.CULoggableEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
