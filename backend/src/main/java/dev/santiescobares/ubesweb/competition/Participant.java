@@ -3,7 +3,7 @@ package dev.santiescobares.ubesweb.competition;
 import dev.santiescobares.ubesweb.competition.enums.ParticipantRole;
 import dev.santiescobares.ubesweb.enums.IdType;
 import dev.santiescobares.ubesweb.enums.School;
-import dev.santiescobares.ubesweb.model.entity.CULoggableEntity;
+import dev.santiescobares.ubesweb.model.loggableentity.CULoggableEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

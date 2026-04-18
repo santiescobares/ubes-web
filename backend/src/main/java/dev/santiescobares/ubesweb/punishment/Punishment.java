@@ -1,6 +1,6 @@
 package dev.santiescobares.ubesweb.punishment;
 
-import dev.santiescobares.ubesweb.model.entity.CLoggableEntity;
+import dev.santiescobares.ubesweb.model.loggableentity.CLoggableEntity;
 import dev.santiescobares.ubesweb.user.User;
 import jakarta.persistence.*;
 import lombok.Getter;

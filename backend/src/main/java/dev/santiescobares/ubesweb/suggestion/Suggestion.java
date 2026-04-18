@@ -1,6 +1,6 @@
 package dev.santiescobares.ubesweb.suggestion;
 
-import dev.santiescobares.ubesweb.model.entity.CULoggableEntity;
+import dev.santiescobares.ubesweb.model.loggableentity.CULoggableEntity;
 import dev.santiescobares.ubesweb.user.User;
 import jakarta.persistence.*;
 import lombok.Getter;

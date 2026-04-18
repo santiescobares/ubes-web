@@ -2,7 +2,7 @@ package dev.santiescobares.ubesweb.user;
 
 import dev.santiescobares.ubesweb.enums.Role;
 import dev.santiescobares.ubesweb.enums.School;
-import dev.santiescobares.ubesweb.model.entity.CUDLoggableEntity;
+import dev.santiescobares.ubesweb.model.loggableentity.CUDLoggableEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
