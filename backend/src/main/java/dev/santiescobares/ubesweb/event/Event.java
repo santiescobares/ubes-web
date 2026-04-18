@@ -1,8 +1,8 @@
 package dev.santiescobares.ubesweb.event;
 
 import dev.santiescobares.ubesweb.event.enums.EventType;
-import dev.santiescobares.ubesweb.model.Location;
-import dev.santiescobares.ubesweb.model.entity.CULoggableEntity;
+import dev.santiescobares.ubesweb.model.location.Location;
+import dev.santiescobares.ubesweb.model.loggableentity.CULoggableEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -22,7 +22,7 @@ public class Event extends CULoggableEntity {
 
     @Enumerated(EnumType.STRING)
     private EventType type;
-    @Column(unique = true, length = 50)
+    @Column(unique = true)
     private String name;
     @Column(length = 1000)
     private String description;
