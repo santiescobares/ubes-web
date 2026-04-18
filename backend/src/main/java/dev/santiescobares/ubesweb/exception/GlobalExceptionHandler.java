@@ -2,7 +2,11 @@ package dev.santiescobares.ubesweb.exception;
 
 import dev.santiescobares.ubesweb.config.filter.LoggingFilter;
 import dev.santiescobares.ubesweb.exception.type.BackendException;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,19 +17,48 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import java.time.Instant;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ExceptionResponseDTO> handleGenericException(Exception e, HttpServletRequest request) {
+        return buildResponse(e, HttpStatus.FORBIDDEN, ErrorCode.INVALID_OPERATION.toString(), e.getMessage(), request);
+    }
 
     @ExceptionHandler(BackendException.class)
     public ResponseEntity<ExceptionResponseDTO> handleBackendException(BackendException e, HttpServletRequest request) {
         return buildResponse(e, e.getStatusCode(), e.getErrorCode(), e.getMessage(), request);
     }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ExceptionResponseDTO> handleGenericException(Exception e, HttpServletRequest request) {
-        return buildResponse(e, HttpStatus.FORBIDDEN, ErrorCode.INVALID_OPERATION.toString(), e.getMessage(), request);
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ExceptionResponseDTO> handleMethodArgumentException(MethodArgumentNotValidException e, HttpServletRequest request) {
+        return buildResponse(
+                e,
+                HttpStatus.BAD_REQUEST,
+                ErrorCode.INVALID_ARGUMENT.toString(),
+                e.getBindingResult()
+                        .getFieldErrors()
+                        .stream()
+                        .map(FieldError::getDefaultMessage)
+                        .collect(Collectors.joining(", ")),
+                request
+        );
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ExceptionResponseDTO> handleConstraintViolationException(ConstraintViolationException e, HttpServletRequest request) {
+        return buildResponse(
+                e,
+                HttpStatus.BAD_REQUEST,
+                ErrorCode.INVALID_ARGUMENT.toString(),
+                e.getConstraintViolations().stream()
+                        .map(ConstraintViolation::getMessage)
+                        .collect(Collectors.joining(", ")),
+                request
+        );
     }
 
     public static ResponseEntity<ExceptionResponseDTO> buildResponse(Exception e, HttpStatus status, String errorCode, String message,

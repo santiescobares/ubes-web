@@ -3,6 +3,7 @@ package dev.santiescobares.ubesweb.exception;
 public enum ErrorCode {
     INVALID_OPERATION,
     UNAUTHORIZED_OPERATION,
+    INVALID_ARGUMENT,
     RESOURCE_NOT_FOUND,
     RESOURCE_ALREADY_EXISTS,
     THIRD_PARTY_EXCEPTION,
