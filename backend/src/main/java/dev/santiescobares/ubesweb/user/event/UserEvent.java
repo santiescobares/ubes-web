@@ -6,13 +6,15 @@ import dev.santiescobares.ubesweb.model.event.LoggableEvent;
 import dev.santiescobares.ubesweb.user.User;
 import lombok.Getter;
 
+import java.util.UUID;
+
 @Getter
 public abstract class UserEvent extends LoggableEvent<User> {
 
     private final User user;
 
-    public UserEvent(User user, Action action) {
-        super(user, ResourceType.USER, user.getId().toString(), action);
+    public UserEvent(UUID userId, User user, Action action) {
+        super(userId, ResourceType.USER, user.getId().toString(), action);
         this.user = user;
     }
 

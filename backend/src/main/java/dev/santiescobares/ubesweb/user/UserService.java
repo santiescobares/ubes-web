@@ -96,7 +96,7 @@ public class UserService {
                 TimeUnit.MILLISECONDS
         );
 
-        eventPublisher.publishEvent(new UserCreateEvent(user));
+        eventPublisher.publishEvent(new UserCreateEvent(user.getId(), user));
 
         return userMapper.toDTO(user);
     }
@@ -116,7 +116,7 @@ public class UserService {
             user.setSchool(dto.school());
         }
 
-        eventPublisher.publishEvent(new UserUpdateEvent(user));
+        eventPublisher.publishEvent(new UserUpdateEvent(RequestContextHolder.getCurrentSession().userId(), user));
 
         return userMapper.toDTO(user);
     }
@@ -151,6 +151,8 @@ public class UserService {
             pictureURL = null;
         }
 
+        eventPublisher.publishEvent(new UserUpdateEvent(RequestContextHolder.getCurrentSession().userId(), user));
+
         return new UserPictureDTO(pictureURL);
     }
 
@@ -163,7 +165,7 @@ public class UserService {
 
         userRepository.delete(user);
 
-        eventPublisher.publishEvent(new UserDeleteEvent(user, request, response));
+        eventPublisher.publishEvent(new UserDeleteEvent(RequestContextHolder.getCurrentSession().userId(), user, request, response));
     }
 
     @Transactional(readOnly = true)
@@ -176,12 +178,8 @@ public class UserService {
         return userMapper.toDTO(getById(id));
     }
 
-    private Optional<User> findById(UUID id) {
-        return userRepository.findById(id);
-    }
-
     public User getById(UUID id) {
-        return findById(id).orElseThrow(() -> new ResourceNotFoundException(ResourceType.USER));
+        return userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException(ResourceType.USER));
     }
 
     public User getCurrentUser() {
