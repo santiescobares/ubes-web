@@ -1,4 +1,4 @@
-package dev.santiescobares.ubesweb.model;
+package dev.santiescobares.ubesweb.model.location;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
