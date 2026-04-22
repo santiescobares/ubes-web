@@ -142,7 +142,7 @@ public class UserService {
                 throw new RuntimeException("An internal error ocurred while trying to resize an image");
             }
 
-            String pictureKey = storageService.uploadFile(resizedFile, s3Config.getPublicBucket(), R2_USER_PICTURES_PATH);
+            String pictureKey = storageService.uploadRandomFile(resizedFile, s3Config.getPublicBucket(), R2_USER_PICTURES_PATH);
 
             user.setPictureKey(pictureKey);
             pictureURL = R2_PUBLIC_URL + "/" + pictureKey;

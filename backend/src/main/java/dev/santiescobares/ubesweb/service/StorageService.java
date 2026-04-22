@@ -2,8 +2,8 @@ package dev.santiescobares.ubesweb.service;
 
 import dev.santiescobares.ubesweb.exception.type.ThirdPartyException;
 import dev.santiescobares.ubesweb.util.RandomUtil;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,21 +18,34 @@ import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignReques
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.stream.IntStream;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class StorageService {
 
     private final S3Client s3Client;
     private final S3Presigner s3Presigner;
 
-    public String uploadFile(MultipartFile file, String bucket, String path, String name) {
+    private final Executor parallelUploadExecutor;
+
+    public StorageService(
+            S3Client s3Client,
+            S3Presigner s3Presigner,
+            @Qualifier("parallelUploadExecutor") Executor parallelUploadExecutor
+    ) {
+        this.s3Client = s3Client;
+        this.s3Presigner = s3Presigner;
+        this.parallelUploadExecutor = parallelUploadExecutor;
+    }
+
+    public String uploadFile(MultipartFile file, String bucket, String key) {
         if (file.isEmpty() || file.getOriginalFilename() == null) {
             throw new IllegalArgumentException("File can't be null or empty");
         }
         try {
-            String key = path + name + "." + StringUtils.getFilenameExtension(file.getOriginalFilename());
             s3Client.putObject(
                     PutObjectRequest.builder()
                             .bucket(bucket)
@@ -48,17 +61,34 @@ public class StorageService {
         }
     }
 
-    public String uploadFile(MultipartFile file, String bucket, String path) {
-        return uploadFile(file, bucket, path, RandomUtil.randomHexString());
+    public String uploadFile(MultipartFile file, String bucket, String path, String name) {
+        return uploadFile(file, bucket, fileName(file, path, name));
+    }
+
+    public String uploadRandomFile(MultipartFile file, String bucket, String path) {
+        return uploadFile(file, bucket, fileName(file, path));
     }
 
     public List<String> uploadFilesInParallel(List<MultipartFile> files, String bucket, String path) {
-        if (files == null || files.isEmpty()) {
-            return List.of();
-        }
-        return files.parallelStream()
-                .map(file -> uploadFile(file, bucket, path))
+        List<CompletableFuture<String>> futures = files.stream()
+                .map(file -> CompletableFuture.supplyAsync(() -> uploadFile(file, bucket, path), parallelUploadExecutor))
                 .toList();
+        return futures.stream()
+                .map(CompletableFuture::join)
+                .toList();
+    }
+
+    public void uploadFilesInParallel(List<MultipartFile> files, String bucket, List<String> keys) {
+        if (files.size() != keys.size()) {
+            throw new IllegalArgumentException("Files size and keys size must be equal");
+        }
+        List<CompletableFuture<String>> futures = IntStream.range(0, files.size())
+                .mapToObj(i -> CompletableFuture.supplyAsync(
+                        () -> uploadFile(files.get(i), bucket, keys.get(i)),
+                        parallelUploadExecutor
+                ))
+                .toList();
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
     }
 
     public String generateDownloadPresignedUrl(String bucket, String fileKey, Duration expiration) {
@@ -83,5 +113,13 @@ public class StorageService {
                                 .build()
                         ).build()
         ).url().toString();
+    }
+
+    public static String fileName(MultipartFile file, String path, String name) {
+        return path + name + StringUtils.getFilenameExtension(file.getOriginalFilename());
+    }
+
+    public static String fileName(MultipartFile file, String path) {
+        return path + RandomUtil.randomHexString() + "." + StringUtils.getFilenameExtension(file.getOriginalFilename());
     }
 }

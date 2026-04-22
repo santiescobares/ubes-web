@@ -56,7 +56,7 @@ public class EventService {
             FileUtil.validateExtension(bannerFile, ImageUtil.IMAGE_FORMATS);
             FileUtil.validateSize(bannerFile.getSize(), MAX_BANNER_FILE_SIZE);
 
-            String bannerKey = storageService.uploadFile(bannerFile, s3Config.getPublicBucket(), R2_EVENT_BANNERS_PATH);
+            String bannerKey = storageService.uploadRandomFile(bannerFile, s3Config.getPublicBucket(), R2_EVENT_BANNERS_PATH);
             event.setBannerKey(bannerKey);
         }
 
@@ -74,13 +74,10 @@ public class EventService {
 
         Event event = getById(id);
 
-        LocalDateTime startingDate = dto.startingDate();
-        LocalDateTime endingDate = dto.endingDate();
-        if (
-                (startingDate != null && endingDate != null && endingDate.isBefore(startingDate))
-                || (startingDate != null && startingDate.isAfter(event.getEndingDate()))
-                || (endingDate != null && endingDate.isBefore(event.getStartingDate()))
-        ) {
+        LocalDateTime finalStartingDate = dto.startingDate() != null ? dto.startingDate() : event.getStartingDate();
+        LocalDateTime finalEndingDate = dto.endingDate() != null ? dto.endingDate() : event.getEndingDate();
+
+        if (finalStartingDate != null && finalEndingDate != null && finalEndingDate.isBefore(finalStartingDate)) {
             throw new IllegalArgumentException("Invalid event starting/ending dates");
         }
 
@@ -93,10 +90,12 @@ public class EventService {
                 FileUtil.validateExtension(newBannerFile, ImageUtil.IMAGE_FORMATS);
                 FileUtil.validateSize(newBannerFile.getSize(), MAX_BANNER_FILE_SIZE);
 
-                String bannerKey = storageService.uploadFile(newBannerFile, s3Config.getPublicBucket(), R2_EVENT_BANNERS_PATH);
+                String bannerKey = storageService.uploadRandomFile(newBannerFile, s3Config.getPublicBucket(), R2_EVENT_BANNERS_PATH);
                 event.setBannerKey(bannerKey);
             }
         }
+
+        eventRepository.save(event);
 
         eventPublisher.publishEvent(new EventUpdateEvent(RequestContextHolder.getCurrentSession().userId(), event));
 
@@ -127,7 +126,7 @@ public class EventService {
         return eventMapper.toDTOList(events);
     }
 
-    public Event getById(Long id) {
+    private Event getById(Long id) {
         return eventRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException(ResourceType.EVENT));
     }
 }
