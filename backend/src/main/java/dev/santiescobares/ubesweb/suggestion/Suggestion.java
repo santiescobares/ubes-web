@@ -37,7 +37,7 @@ public class Suggestion extends CULoggableEntity {
     @JoinColumn(name = "hidden_by_id")
     private User hiddenBy;
 
-    @OneToMany(mappedBy = "suggestion", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "suggestion", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SuggestionVote> votes;
 
     public List<SuggestionVote> getVotes() {

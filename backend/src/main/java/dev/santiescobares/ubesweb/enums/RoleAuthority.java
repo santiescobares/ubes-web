@@ -18,4 +18,8 @@ public enum RoleAuthority {
     public boolean surpasses(RoleAuthority other) {
         return weight > other.weight;
     }
+
+    public boolean isAtLeast(RoleAuthority authority) {
+        return weight >= authority.weight;
+    }
 }
