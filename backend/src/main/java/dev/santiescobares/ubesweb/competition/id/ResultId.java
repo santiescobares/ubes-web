@@ -1,6 +1,6 @@
 package dev.santiescobares.ubesweb.competition.id;
 
-import dev.santiescobares.ubesweb.competition.Competition;
+import dev.santiescobares.ubesweb.competition.entity.Competition;
 import dev.santiescobares.ubesweb.competition.enums.ParticipantPositionType;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.EnumType;

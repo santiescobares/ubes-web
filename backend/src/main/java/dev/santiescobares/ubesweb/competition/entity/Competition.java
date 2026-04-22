@@ -1,4 +1,4 @@
-package dev.santiescobares.ubesweb.competition;
+package dev.santiescobares.ubesweb.competition.entity;
 
 import dev.santiescobares.ubesweb.competition.enums.CompetitionStatus;
 import dev.santiescobares.ubesweb.competition.enums.RegistrationStatus;
@@ -25,7 +25,7 @@ public class Competition extends Event {
     @JoinColumn(name = "regulation_document_id")
     private Document regulationDocument;
 
-    private int participantsPerSchool;
+    private int minParticipants, maxParticipants;
     private boolean requiresShirtNumbers, requiresMedicalCertificates;
 
     private LocalDateTime registrationStartingDate, registrationEndingDate;
@@ -35,9 +35,9 @@ public class Competition extends Event {
     @Enumerated(EnumType.STRING)
     private CompetitionStatus status;
 
-    @OneToMany(mappedBy = "competition", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "competition", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Participant> participants;
-    @OneToMany(mappedBy = "competition", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "competition", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Result> results;
 
     public List<Participant> getParticipants() {

@@ -1,4 +1,4 @@
-package dev.santiescobares.ubesweb.competition;
+package dev.santiescobares.ubesweb.competition.entity;
 
 import dev.santiescobares.ubesweb.competition.enums.ParticipantRole;
 import dev.santiescobares.ubesweb.enums.IdType;
