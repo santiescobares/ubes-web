@@ -15,7 +15,6 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -55,7 +54,7 @@ public class StorageService {
                     RequestBody.fromInputStream(file.getInputStream(), file.getSize())
             );
             return key;
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("An error ocurred while trying to upload a file to R2. {}", e.getMessage());
             throw new ThirdPartyException("An error ocurred while trying to upload a file to R2");
         }
