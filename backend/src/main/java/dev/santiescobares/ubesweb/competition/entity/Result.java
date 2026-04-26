@@ -15,7 +15,7 @@ import lombok.Setter;
 public class Result {
 
     @EmbeddedId
-    private ResultId resultId;
+    private ResultId id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("competitionId")

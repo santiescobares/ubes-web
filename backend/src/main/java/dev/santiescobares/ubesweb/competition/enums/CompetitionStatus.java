@@ -4,6 +4,5 @@ public enum CompetitionStatus {
     SCHEDULED,
     ON_GOING,
     FINISHED,
-    CANCELED,
-    UNDER_REGISTRATION;
+    CANCELED;
 }

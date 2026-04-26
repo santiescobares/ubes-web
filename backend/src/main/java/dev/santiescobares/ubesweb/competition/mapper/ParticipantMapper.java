@@ -17,6 +17,5 @@ public interface ParticipantMapper {
 
     ParticipantDTO toDTO(Participant participant);
 
-    @Mapping(target = "school", ignore = true)
     void updateFromDTO(@MappingTarget Participant participant, ParticipantUpdateDTO dto);
 }

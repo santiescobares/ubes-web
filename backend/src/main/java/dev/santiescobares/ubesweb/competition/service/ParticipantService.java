@@ -5,6 +5,7 @@ import dev.santiescobares.ubesweb.competition.dto.participant.ParticipantDTO;
 import dev.santiescobares.ubesweb.competition.dto.participant.ParticipantUpdateDTO;
 import dev.santiescobares.ubesweb.competition.entity.Competition;
 import dev.santiescobares.ubesweb.competition.entity.Participant;
+import dev.santiescobares.ubesweb.competition.enums.RegistrationStatus;
 import dev.santiescobares.ubesweb.competition.event.participant.CompetitionAddParticipantsEvent;
 import dev.santiescobares.ubesweb.competition.event.participant.CompetitionRemoveParticipantEvent;
 import dev.santiescobares.ubesweb.competition.event.participant.CompetitionUpdateParticipantEvent;
@@ -15,6 +16,7 @@ import dev.santiescobares.ubesweb.config.S3Config;
 import dev.santiescobares.ubesweb.context.RequestContextHolder;
 import dev.santiescobares.ubesweb.enums.ResourceType;
 import dev.santiescobares.ubesweb.enums.RoleAuthority;
+import dev.santiescobares.ubesweb.exception.type.InvalidOperationException;
 import dev.santiescobares.ubesweb.exception.type.ResourceNotFoundException;
 import dev.santiescobares.ubesweb.service.StorageService;
 import dev.santiescobares.ubesweb.user.User;
@@ -65,6 +67,13 @@ public class ParticipantService {
     ) {
         Competition competition = competitionService.getById(competitionId);
 
+        User currentUser = userService.getCurrentUser();
+        boolean isAuthority = currentUser.getRole().getAuthority().isAtLeast(RoleAuthority.COMPETITION);
+
+        if (competition.getRegistrationStatus() != RegistrationStatus.AVAILABLE && !isAuthority) {
+            throw new InvalidOperationException("Competition is not under registration stage");
+        }
+
         // We map certificate files to their reference name set in DTO, this will help us to access them faster
         Map<String, MultipartFile> studentCertificatesMap = studentCertificateFiles == null ? Map.of() :
                 studentCertificateFiles.stream()
@@ -75,15 +84,12 @@ public class ParticipantService {
                 .filter(f -> f.getOriginalFilename() != null && !f.isEmpty())
                 .collect(Collectors.toMap(MultipartFile::getOriginalFilename, f -> f));
 
-        User currentUser = userService.getCurrentUser();
-        boolean canOverrideSchool = currentUser.getRole().getAuthority().isAtLeast(RoleAuthority.COMPETITION);
-
         List<MultipartFile> studentFilesBatch = new ArrayList<>(), medicalFilesBatch = new ArrayList<>();
         List<String> studentKeys = new ArrayList<>(), medicalKeys = new ArrayList<>();
 
         for (ParticipantCreateDTO participantDTO : participants) {
             Participant participant = participantMapper.toEntity(participantDTO);
-            participant.setSchool(canOverrideSchool ? participantDTO.school() : currentUser.getSchool());
+            participant.setSchool(isAuthority ? participantDTO.school() : currentUser.getSchool());
 
             if (participantDTO.studentCertificateFileRef() != null) {
                 MultipartFile file = studentCertificatesMap.get(participantDTO.studentCertificateFileRef());
@@ -147,14 +153,7 @@ public class ParticipantService {
         Participant participant = getById(id);
         Competition competition = participant.getCompetition();
 
-        User currentUser = userService.getCurrentUser();
-        boolean canOverrideSchool = currentUser.getRole().getAuthority().isAtLeast(RoleAuthority.COMPETITION);
-
         participantMapper.updateFromDTO(participant, dto);
-
-        if (dto.school() != null && canOverrideSchool) {
-            participant.setSchool(dto.school());
-        }
 
         if (removeStudentCertificate != null && removeStudentCertificate) {
             participant.setStudentCertificateKey(null);
@@ -211,7 +210,7 @@ public class ParticipantService {
                 .map(participantMapper::toDTO);
     }
 
-    private Participant getById(Long id) {
+    public Participant getById(Long id) {
         return participantRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException(ResourceType.COMPETITION_PARTICIPANT));
     }
 }

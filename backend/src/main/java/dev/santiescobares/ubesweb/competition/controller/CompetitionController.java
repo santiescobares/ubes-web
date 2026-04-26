@@ -18,6 +18,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
+
 @RestController
 @RequestMapping(Global.BASE_URL + "/competitions")
 @RequiredArgsConstructor
@@ -61,6 +63,52 @@ public class CompetitionController {
     public ResponseEntity<Void> deleteCompetition(@PathVariable Long id) {
         competitionService.deleteCompetition(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/schedule-registration")
+    @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION')")
+    public ResponseEntity<Void> scheduleCompetitionRegistration(
+            @PathVariable Long id,
+            @RequestParam LocalDateTime startingDate,
+            @RequestParam LocalDateTime endingDate
+    ) {
+        competitionService.scheduleCompetitionRegistration(id, startingDate, endingDate);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{id}/open-registration")
+    @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION')")
+    public ResponseEntity<Void> openCompetitionRegistration(@PathVariable Long id) {
+        competitionService.openCompetitionRegistration(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{id}/close-registration")
+    @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION')")
+    public ResponseEntity<Void> closeCompetitionRegistration(@PathVariable Long id) {
+        competitionService.closeCompetitionRegistration(id, true);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{id}/start")
+    @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION')")
+    public ResponseEntity<Void> startCompetition(@PathVariable Long id) {
+        competitionService.startCompetition(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{id}/end")
+    @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION')")
+    public ResponseEntity<Void> endCompetition(@PathVariable Long id) {
+        competitionService.endCompetition(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{id}/cancel")
+    @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION')")
+    public ResponseEntity<Void> cancelCompetition(@PathVariable Long id) {
+        competitionService.cancelCompetition(id);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/{id}")

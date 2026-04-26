@@ -13,6 +13,7 @@ import dev.santiescobares.ubesweb.competition.mapper.CompetitionMapper;
 import dev.santiescobares.ubesweb.competition.repository.CompetitionRepository;
 import dev.santiescobares.ubesweb.config.S3Config;
 import dev.santiescobares.ubesweb.context.RequestContextHolder;
+import dev.santiescobares.ubesweb.document.Document;
 import dev.santiescobares.ubesweb.document.DocumentService;
 import dev.santiescobares.ubesweb.document.dto.DocumentCreateDTO;
 import dev.santiescobares.ubesweb.document.dto.DocumentUpdateDTO;
@@ -20,11 +21,13 @@ import dev.santiescobares.ubesweb.document.enums.DocumentType;
 import dev.santiescobares.ubesweb.enums.ResourceType;
 import dev.santiescobares.ubesweb.event.enums.EventType;
 import dev.santiescobares.ubesweb.exception.type.InvalidOperationException;
+import dev.santiescobares.ubesweb.exception.type.ResourceAlreadyExistsException;
 import dev.santiescobares.ubesweb.exception.type.ResourceNotFoundException;
 import dev.santiescobares.ubesweb.service.StorageService;
 import dev.santiescobares.ubesweb.util.FileUtil;
 import dev.santiescobares.ubesweb.util.ImageUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -34,11 +37,13 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static dev.santiescobares.ubesweb.Global.*;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CompetitionService {
 
     private static final Set<String> REGULATION_DOCUMENT_FORMATS = Set.of("pdf", "doc", "docx");
@@ -75,11 +80,28 @@ public class CompetitionService {
         }
 
         if (regulationDocumentFile != null && !regulationDocumentFile.isEmpty()) {
-            competition.setRegulationDocument(documentService.createDocumentDinamically(
-                    new DocumentCreateDTO(competition.getName(), DocumentType.REGULATION),
-                    regulationDocumentFile,
-                    REGULATION_DOCUMENT_FORMATS
-            ));
+            Document regulationDocument;
+            try {
+                regulationDocument = documentService.createDocumentDinamically(
+                        new DocumentCreateDTO(competition.getName(), DocumentType.REGULATION),
+                        regulationDocumentFile,
+                        REGULATION_DOCUMENT_FORMATS
+                );
+            } catch (ResourceAlreadyExistsException ignored) {
+                String name = competition.getName();
+                if (name.length() > 43) {
+                    name = name.substring(0, 43);
+                }
+                regulationDocument = documentService.createDocumentDinamically(
+                        new DocumentCreateDTO(
+                                name + "-" + String.format("%06d", ThreadLocalRandom.current().nextInt(999999)),
+                                DocumentType.REGULATION
+                        ),
+                        regulationDocumentFile,
+                        REGULATION_DOCUMENT_FORMATS
+                );
+            }
+            competition.setRegulationDocument(regulationDocument);
         }
 
         competition.setRegistrationStatus(RegistrationStatus.UNAVAILABLE);
@@ -154,6 +176,105 @@ public class CompetitionService {
         }
 
         competitionRepository.save(competition);
+
+        eventPublisher.publishEvent(new CompetitionUpdateEvent(RequestContextHolder.getCurrentSession().userId(), competition));
+
+        return competitionMapper.toDTO(competition);
+    }
+
+    @Transactional
+    public CompetitionDTO scheduleCompetitionRegistration(Long id, LocalDateTime startingDate, LocalDateTime endingDate) {
+        Competition competition = getById(id);
+        if (competition.getRegistrationStatus() == RegistrationStatus.AVAILABLE) {
+            throw new InvalidOperationException("Competition is already under registration stage");
+        }
+        if (LocalDateTime.now().isAfter(competition.getStartingDate())) {
+            throw new InvalidOperationException("Competition has already started");
+        }
+
+        if (endingDate.isBefore(startingDate)) {
+            throw new IllegalArgumentException("Invalid competition registration starting/ending dates");
+        }
+
+        competition.setRegistrationStartingDate(startingDate);
+        competition.setRegistrationEndingDate(endingDate);
+        competition.setRegistrationStatus(RegistrationStatus.SCHEDULED);
+
+        eventPublisher.publishEvent(new CompetitionUpdateEvent(RequestContextHolder.getCurrentSession().userId(), competition));
+
+        return competitionMapper.toDTO(competition);
+    }
+
+    @Transactional
+    public void openCompetitionRegistration(Long id) {
+        Competition competition = getById(id);
+
+        if (competition.getRegistrationStatus() == RegistrationStatus.AVAILABLE) {
+            throw new InvalidOperationException("Competition is already under registration stage");
+        }
+
+        competition.setRegistrationStatus(RegistrationStatus.AVAILABLE);
+
+        log.info("Competition '{}' registration is now available", competition.getId());
+    }
+
+    @Transactional
+    public void closeCompetitionRegistration(Competition competition, boolean cancel) {
+        if (competition.getRegistrationStatus() != RegistrationStatus.AVAILABLE) {
+            throw new InvalidOperationException("Competition is not under registration stage");
+        }
+
+        competition.setRegistrationStatus(cancel ? RegistrationStatus.CANCELED : RegistrationStatus.EXPIRED);
+
+        log.info("Competition '{}' registration is no longer available", competition.getId());
+    }
+
+    @Transactional
+    public void closeCompetitionRegistration(Long id, boolean cancel) {
+        closeCompetitionRegistration(getById(id), cancel);
+    }
+
+    @Transactional
+    public void startCompetition(Long id) {
+        Competition competition = getById(id);
+
+        if (competition.getStatus() == CompetitionStatus.ON_GOING) {
+            throw new InvalidOperationException("Competition is already on going");
+        }
+
+        if (competition.getRegistrationStatus() == RegistrationStatus.AVAILABLE) {
+            closeCompetitionRegistration(competition, false);
+        }
+
+        competition.setStatus(CompetitionStatus.ON_GOING);
+    }
+
+    @Transactional
+    public void endCompetition(Competition competition) {
+        if (competition.getStatus() != CompetitionStatus.ON_GOING) {
+            throw new InvalidOperationException("Competition is not on going");
+        }
+
+        competition.setStatus(CompetitionStatus.FINISHED);
+    }
+
+    @Transactional
+    public void endCompetition(Long id) {
+        endCompetition(getById(id));
+    }
+
+    @Transactional
+    public CompetitionDTO cancelCompetition(Long id) {
+        Competition competition = getById(id);
+        if (competition.getStatus() == CompetitionStatus.CANCELED) {
+            throw new InvalidOperationException("Competition is already canceled");
+        }
+
+        if (competition.getRegistrationStatus() == RegistrationStatus.AVAILABLE) {
+            closeCompetitionRegistration(competition, true);
+        }
+
+        competition.setStatus(CompetitionStatus.CANCELED);
 
         eventPublisher.publishEvent(new CompetitionUpdateEvent(RequestContextHolder.getCurrentSession().userId(), competition));
 

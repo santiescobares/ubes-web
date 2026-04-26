@@ -26,10 +26,10 @@ public class ParticipantController {
 
     private final ParticipantService participantService;
 
-    @PostMapping(path = "/{competitionId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION', 'DELEGATE')")
     public ResponseEntity<Void> addParticipants(
-            @PathVariable Long competitionId,
+            @RequestParam Long competitionId,
             @RequestPart("participants") List<@Valid ParticipantCreateDTO> participants,
             @RequestPart(value = "studentCertificateFiles", required = false) List<MultipartFile> studentCertificateFiles,
             @RequestPart(value = "medicalCertificateFiles", required = false) List<MultipartFile> medicalCertificateFiles

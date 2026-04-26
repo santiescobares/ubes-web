@@ -34,6 +34,7 @@ public class Participant extends CULoggableEntity {
     private String idNumber;
     @Enumerated(EnumType.STRING)
     private School school;
+    @Column(check = @CheckConstraint(name = "shirt_number_check", constraint = "shirt_number >= 0 AND shirt_number <= 99"))
     private int shirtNumber;
 
     private String studentCertificateKey, medicalCertificateKey;

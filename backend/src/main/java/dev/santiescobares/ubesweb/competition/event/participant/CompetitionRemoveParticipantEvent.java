@@ -14,7 +14,7 @@ public class CompetitionRemoveParticipantEvent extends CompetitionEvent {
     private final Participant participant;
 
     public CompetitionRemoveParticipantEvent(UUID userId, Competition competition, Participant participant) {
-        super(userId, competition, Action.UPDATE);
+        super(userId, competition, Action.DELETE);
         this.participant = participant;
     }
 }

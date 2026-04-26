@@ -10,13 +10,18 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
 @Entity
-@Table(name = "competitions", indexes = {
-        @Index(name = "idx_competition_regulation_documents", columnList = "regulation_document_id")
-})
+@Table(
+        name = "competitions",
+        check = @CheckConstraint(name = "participants_check", constraint = "min_participants > 0 AND max_participants > 1"),
+        indexes = {
+                @Index(name = "idx_competition_regulation_documents", columnList = "regulation_document_id")
+        }
+)
 @Getter
 @Setter
 public class Competition extends Event {
@@ -59,5 +64,21 @@ public class Competition extends Event {
 
     public List<Result> getResults() {
         return results != null ? Collections.unmodifiableList(results) : Collections.emptyList();
+    }
+
+    public void addResults(Collection<Result> results) {
+        if (this.results == null) {
+            this.results = new ArrayList<>();
+        }
+        results.forEach(result -> {
+            result.setCompetition(this);
+            this.results.add(result);
+        });
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof Competition)) return false;
+        return ((Competition) obj).getId().equals(getId());
     }
 }

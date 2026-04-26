@@ -2,6 +2,9 @@ package dev.santiescobares.ubesweb;
 
 import lombok.experimental.UtilityClass;
 
+import java.time.LocalDate;
+import java.time.Month;
+
 @UtilityClass
 public final class Global {
 
@@ -19,4 +22,8 @@ public final class Global {
 
     public final String REDIS_TOKEN_BLACKLIST_KEY = "token_blacklist:";
     public final String REDIS_FORCED_LOGOUT_KEY = "forced_logout:";
+
+    public LocalDate COMPETITION_RESULTS_DEADLINE() {
+        return LocalDate.of(LocalDate.now().getYear(), Month.SEPTEMBER, 22);
+    }
 }

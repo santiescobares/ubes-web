@@ -15,7 +15,7 @@ public class CompetitionAddParticipantsEvent extends CompetitionEvent {
     private final List<Participant> addedParticipants;
 
     public CompetitionAddParticipantsEvent(UUID userId, Competition competition, List<Participant> addedParticipants) {
-        super(userId, competition, Action.UPDATE);
+        super(userId, competition, Action.CREATE);
         this.addedParticipants = addedParticipants;
     }
 }
