@@ -25,7 +25,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -52,7 +51,6 @@ public class AuthService {
 
     private final JwtConfig jwtConfig;
 
-    @Transactional
     public LoginResponseDTO login(LoginRequestDTO dto, HttpServletRequest request, HttpServletResponse response) {
         eventPublisher.publishEvent(new PreLoginEvent(request, response));
 
