@@ -23,6 +23,7 @@ public class Document extends CULoggableEntity {
     private DocumentType type;
     @Enumerated(EnumType.STRING)
     private FileType fileType;
+    @Column(check = @CheckConstraint(name = "size_check", constraint = "size > 0"))
     private long size;
 
     private String key;

@@ -6,6 +6,8 @@ import dev.santiescobares.ubesweb.document.dto.DocumentDTO;
 import dev.santiescobares.ubesweb.document.dto.DocumentUpdateDTO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -34,7 +36,7 @@ public class DocumentController {
     public ResponseEntity<DocumentDTO> updateDocument(
             @PathVariable Long id,
             @RequestPart("body") @Valid DocumentUpdateDTO dto,
-            @RequestPart("file") MultipartFile file
+            @RequestPart(value = "file", required = false) MultipartFile file
     ) {
         return ResponseEntity.ok(documentService.updateDocument(id, dto, file));
     }
@@ -49,5 +51,11 @@ public class DocumentController {
     @GetMapping("/{id}")
     public ResponseEntity<DocumentDTO> getDocument(@PathVariable Long id) {
         return ResponseEntity.ok(documentService.getDocumentDTO(id));
+    }
+
+    @GetMapping
+    @PreAuthorize("hasAnyAuthority('EXECUTIVE')")
+    public ResponseEntity<Page<DocumentDTO>> getAll(Pageable pageable) {
+        return ResponseEntity.ok(documentService.getDocumentDTOs(pageable));
     }
 }

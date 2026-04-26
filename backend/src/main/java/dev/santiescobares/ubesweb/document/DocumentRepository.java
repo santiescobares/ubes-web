@@ -3,4 +3,6 @@ package dev.santiescobares.ubesweb.document;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface DocumentRepository extends JpaRepository<Document, Long> {
+
+    boolean existsByNameIgnoreCase(String name);
 }

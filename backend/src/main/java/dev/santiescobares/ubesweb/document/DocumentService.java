@@ -5,16 +5,20 @@ import dev.santiescobares.ubesweb.context.RequestContextHolder;
 import dev.santiescobares.ubesweb.document.dto.DocumentCreateDTO;
 import dev.santiescobares.ubesweb.document.dto.DocumentDTO;
 import dev.santiescobares.ubesweb.document.dto.DocumentUpdateDTO;
+import dev.santiescobares.ubesweb.document.enums.DocumentType;
 import dev.santiescobares.ubesweb.document.event.DocumentCreateEvent;
 import dev.santiescobares.ubesweb.document.event.DocumentDeleteEvent;
 import dev.santiescobares.ubesweb.document.event.DocumentUpdateEvent;
 import dev.santiescobares.ubesweb.enums.FileType;
 import dev.santiescobares.ubesweb.enums.ResourceType;
+import dev.santiescobares.ubesweb.exception.type.ResourceAlreadyExistsException;
 import dev.santiescobares.ubesweb.exception.type.ResourceNotFoundException;
 import dev.santiescobares.ubesweb.service.StorageService;
 import dev.santiescobares.ubesweb.util.FileUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -48,6 +52,10 @@ public class DocumentService {
             throw new IllegalArgumentException("Document file can't be null or empty");
         }
 
+        if (documentRepository.existsByNameIgnoreCase(dto.name())) {
+            throw new ResourceAlreadyExistsException(ResourceType.DOCUMENT);
+        }
+
         Document document = documentMapper.toEntity(dto);
         checkFileAndComplete(documentFile, allowedFormats, document);
 
@@ -62,6 +70,9 @@ public class DocumentService {
     }
 
     public DocumentDTO createDocument(DocumentCreateDTO dto, MultipartFile documentFile, Set<String> allowedFormats) {
+        if (dto.type() == DocumentType.REGULATION) {
+            throw new IllegalArgumentException("Invalid endpoint for regulation documents");
+        }
         Document document = createDocumentDinamically(dto, documentFile, allowedFormats);
         return documentMapper.toDTO(document);
     }
@@ -76,6 +87,13 @@ public class DocumentService {
             MultipartFile newDocumentFile,
             Set<String> allowedFormats
     ) {
+        if (dto.name() != null && !dto.name().equalsIgnoreCase(document.getName()) && documentRepository.existsByNameIgnoreCase(dto.name())) {
+            throw new ResourceAlreadyExistsException(ResourceType.DOCUMENT);
+        }
+        if (dto.type() != null && dto.type() == DocumentType.REGULATION) {
+            throw new IllegalArgumentException("Invalid endpoint for regulation documents");
+        }
+
         documentMapper.updateFromDTO(document, dto);
 
         if (newDocumentFile != null && !newDocumentFile.isEmpty()) {
@@ -124,6 +142,11 @@ public class DocumentService {
     @Transactional(readOnly = true)
     public DocumentDTO getDocumentDTO(Long id) {
         return documentMapper.toDTO(getById(id));
+    }
+
+    @Transactional(readOnly = true)
+    public Page<DocumentDTO> getDocumentDTOs(Pageable pageable) {
+        return documentRepository.findAll(pageable).map(documentMapper::toDTO);
     }
 
     private Document getById(Long id) {
