@@ -125,11 +125,7 @@ public class DocumentService {
 
     @Transactional
     public void deleteDocument(Long id) {
-        Document document = getById(id);
-
-        documentRepository.delete(document);
-
-        eventPublisher.publishEvent(new DocumentDeleteEvent(RequestContextHolder.getCurrentSession().userId(), document));
+        deleteDocument(getById(id));
     }
 
     @Transactional
