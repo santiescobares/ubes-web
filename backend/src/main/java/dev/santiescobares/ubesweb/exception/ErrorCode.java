@@ -13,8 +13,8 @@ public enum ErrorCode {
     @Override
     public String toString() {
         return switch (this) {
-            case RESOURCE_NOT_FOUND -> "RESOURCE_%s%_NOT_FOUND";
-            case RESOURCE_ALREADY_EXISTS -> "RESOURCE_%s%_ALREADY_EXISTS";
+            case RESOURCE_NOT_FOUND -> "RESOURCE_%s_NOT_FOUND";
+            case RESOURCE_ALREADY_EXISTS -> "RESOURCE_%s_ALREADY_EXISTS";
             default -> name();
         };
     }
