@@ -31,7 +31,7 @@ public class Post extends CULoggableEntity {
     @Column(length = 5000)
     private String body;
 
-    private List<String> fileKeys;
+    private String bannerKey;
 
     private boolean hidden;
 }
