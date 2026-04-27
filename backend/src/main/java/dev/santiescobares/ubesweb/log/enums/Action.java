@@ -6,5 +6,7 @@ public enum Action {
     DELETE,
     ROLL_BACK,
     LOG_IN,
-    LOG_OUT;
+    LOG_OUT,
+    ADD,
+    REMOVE;
 }
