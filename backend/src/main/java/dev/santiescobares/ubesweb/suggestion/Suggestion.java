@@ -48,7 +48,6 @@ public class Suggestion extends CULoggableEntity {
         if (votes == null) {
             votes = new ArrayList<>();
         }
-        vote.setSuggestion(this);
         return votes.add(vote);
     }
 
@@ -56,7 +55,13 @@ public class Suggestion extends CULoggableEntity {
         return hiddenAt != null;
     }
 
-    public void hide() {
-        hiddenAt = Instant.now();
+    public void hide(User hiddenBy) {
+        this.hiddenAt = Instant.now();
+        this.hiddenBy = hiddenBy;
+    }
+
+    public void unhide() {
+        this.hiddenAt = null;
+        this.hiddenBy = null;
     }
 }
