@@ -38,6 +38,4 @@ public class User extends CUDLoggableEntity {
     private School school;
 
     private String pictureKey;
-
-    private boolean active;
 }

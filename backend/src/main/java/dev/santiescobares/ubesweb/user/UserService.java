@@ -26,8 +26,10 @@ import dev.santiescobares.ubesweb.util.ImageUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -42,6 +44,7 @@ import static dev.santiescobares.ubesweb.Global.*;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserService {
 
     private static final long MAX_PICTURE_FILE_SIZE = 10_485_760;
@@ -79,7 +82,6 @@ public class UserService {
         user.setEmail(token.getClaim("email").asString());
         user.setRole(Role.USER);
         user.setSchool(dto.school());
-        user.setActive(true);
 
         if (user.isDeleted()) {
             user.setDeletedAt(null);
@@ -166,6 +168,15 @@ public class UserService {
         userRepository.delete(user);
 
         eventPublisher.publishEvent(new UserDeleteEvent(RequestContextHolder.getCurrentSession().userId(), user, request, response));
+    }
+
+    @Transactional
+    @Scheduled(cron = "0 0 4 * * *")
+    public void anonymizeDeletedUsers() {
+        int result = userRepository.anonymizeDeletedUsers();
+        if (result > 0) {
+            log.info("User anonymization performed. {} entites affected", result);
+        }
     }
 
     @Transactional(readOnly = true)
