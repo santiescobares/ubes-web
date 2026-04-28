@@ -14,6 +14,7 @@ import dev.santiescobares.ubesweb.auth.token.TokenException;
 import dev.santiescobares.ubesweb.auth.token.TokenService;
 import dev.santiescobares.ubesweb.config.JwtConfig;
 import dev.santiescobares.ubesweb.exception.type.ThirdPartyException;
+import dev.santiescobares.ubesweb.punishment.PunishmentService;
 import dev.santiescobares.ubesweb.user.User;
 import dev.santiescobares.ubesweb.user.UserMapper;
 import dev.santiescobares.ubesweb.user.UserService;
@@ -40,6 +41,7 @@ public class AuthService {
     private final TokenService tokenService;
 
     private final UserService userService;
+    private final PunishmentService punishmentService;
 
     private final UserMapper userMapper;
 
@@ -77,7 +79,7 @@ public class AuthService {
         LoginResponseDTO responseDTO;
         if (userOp.isPresent()) {
             User user = userOp.get();
-            if (!user.isActive()) {
+            if (punishmentService.hasActivePunishments(user)) {
                 throw new InactiveUserException("Your account is banned");
             }
 

@@ -34,8 +34,6 @@ public class Punishment extends CLoggableEntity {
     private String reason;
     private LocalDateTime expiresAt;
 
-    private boolean active;
-
     private Instant removedAt;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "removed_by_id")
@@ -43,8 +41,8 @@ public class Punishment extends CLoggableEntity {
     @Column(length = 500)
     private String removeReason;
 
-    public boolean isRemoved() {
-        return removedAt != null;
+    public boolean isActive() {
+        return removedAt == null && (expiresAt == null || LocalDateTime.now().isBefore(expiresAt));
     }
 
     public void remove(User remover, String reason) {
