@@ -247,6 +247,8 @@ public class CompetitionService {
         }
 
         competition.setStatus(CompetitionStatus.ON_GOING);
+
+        eventPublisher.publishEvent(new CompetitionUpdateEvent(RequestContextHolder.getCurrentSession().userId(), competition));
     }
 
     @Transactional
@@ -256,6 +258,8 @@ public class CompetitionService {
         }
 
         competition.setStatus(CompetitionStatus.FINISHED);
+
+        eventPublisher.publishEvent(new CompetitionUpdateEvent(RequestContextHolder.getCurrentSession().userId(), competition));
     }
 
     @Transactional

@@ -124,11 +124,16 @@ public class ResultService {
     @Transactional(readOnly = true)
     public List<ResultDTO> getResults(Long competitionId) {
         List<Result> results = resultRepository.findAllByCompetitionId(competitionId);
+        boolean hidePoints = LocalDate.now().isBefore(Global.COMPETITION_RESULTS_DEADLINE());
 
-        if (LocalDate.now().isBefore(Global.COMPETITION_RESULTS_DEADLINE())) {
-            results.forEach(result -> result.setPoints(-1));
-        }
-
-        return resultMapper.toDTOList(results);
+        return results.stream()
+                .map(result -> {
+                    ResultDTO dto = resultMapper.toDTO(result);
+                    if (hidePoints) {
+                        return new ResultDTO(dto.positionType(), dto.positionNumber(), dto.name(), -1, dto.participant());
+                    }
+                    return dto;
+                })
+                .toList();
     }
 }
