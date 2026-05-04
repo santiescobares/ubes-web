@@ -85,8 +85,11 @@ public class CompetitionController {
 
     @PatchMapping("/{id}/close-registration")
     @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION')")
-    public ResponseEntity<Void> closeCompetitionRegistration(@PathVariable Long id) {
-        competitionService.closeCompetitionRegistration(id, true);
+    public ResponseEntity<Void> closeCompetitionRegistration(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "false") boolean cancel
+    ) {
+        competitionService.closeCompetitionRegistration(id, cancel);
         return ResponseEntity.ok().build();
     }
 
