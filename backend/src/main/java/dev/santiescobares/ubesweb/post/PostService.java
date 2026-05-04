@@ -3,7 +3,6 @@ package dev.santiescobares.ubesweb.post;
 import dev.santiescobares.ubesweb.config.S3Config;
 import dev.santiescobares.ubesweb.context.RequestContextHolder;
 import dev.santiescobares.ubesweb.enums.ResourceType;
-import dev.santiescobares.ubesweb.enums.RoleAuthority;
 import dev.santiescobares.ubesweb.exception.type.ResourceNotFoundException;
 import dev.santiescobares.ubesweb.post.dto.PostCreateDTO;
 import dev.santiescobares.ubesweb.post.dto.PostDTO;
@@ -53,7 +52,7 @@ public class PostService {
             FileUtil.validateExtension(bannerFile, ImageUtil.IMAGE_FORMATS);
             FileUtil.validateSize(bannerFile.getSize(), MAX_BANNER_FILE_SIZE);
 
-            String bannerKey = storageService.uploadRandomFile(bannerFile, s3Config.getPrivateBucket(), R2_POST_BANNERS_PATH);
+            String bannerKey = storageService.uploadRandomFile(bannerFile, s3Config.getPublicBucket(), R2_POST_BANNERS_PATH);
             post.setBannerKey(bannerKey);
         }
 
@@ -76,10 +75,12 @@ public class PostService {
                 FileUtil.validateExtension(newBannerFile, ImageUtil.IMAGE_FORMATS);
                 FileUtil.validateSize(newBannerFile.getSize(), MAX_BANNER_FILE_SIZE);
 
-                String bannerKey = storageService.uploadRandomFile(newBannerFile, s3Config.getPrivateBucket(), R2_POST_BANNERS_PATH);
+                String bannerKey = storageService.uploadRandomFile(newBannerFile, s3Config.getPublicBucket(), R2_POST_BANNERS_PATH);
                 post.setBannerKey(bannerKey);
             }
         }
+
+        postRepository.save(post);
 
         eventPublisher.publishEvent(new PostUpdateEvent(RequestContextHolder.getCurrentSession().userId(), post));
 
@@ -97,30 +98,14 @@ public class PostService {
 
     @Transactional(readOnly = true)
     public PostDTO getPostDTOBySlug(String slug) {
-        RoleAuthority roleAuthority = RequestContextHolder.getCurrentSession().role().getAuthority();
-        Post post;
-
-        if (roleAuthority == RoleAuthority.EXECUTIVE || roleAuthority == RoleAuthority.PRESS) {
-            post = postRepository.findBySlug(slug).orElseThrow(() -> new ResourceNotFoundException(ResourceType.POST));
-        } else {
-            post = postRepository.findBySlugAndHiddenFalse(slug).orElseThrow(() -> new ResourceNotFoundException(ResourceType.POST));
-        }
-
-        return postMapper.toDTO(post);
+        return postMapper.toDTO(
+                postRepository.findBySlug(slug).orElseThrow(() -> new ResourceNotFoundException(ResourceType.POST))
+        );
     }
 
     @Transactional(readOnly = true)
     public Page<PostDTO> getPostDTOs(Pageable pageable) {
-        RoleAuthority roleAuthority = RequestContextHolder.getCurrentSession().role().getAuthority();
-        Page<Post> posts;
-
-        if (roleAuthority == RoleAuthority.EXECUTIVE || roleAuthority == RoleAuthority.PRESS) {
-            posts = postRepository.findAll(pageable);
-        } else {
-            posts = postRepository.findAllByHiddenFalse(pageable);
-        }
-
-        return posts.map(postMapper::toDTO);
+        return postRepository.findAll(pageable).map(postMapper::toDTO);
     }
 
     private Post getById(Long id) {

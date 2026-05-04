@@ -6,8 +6,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.List;
-
 @Entity
 @Table(name = "posts", indexes = {
         @Index(name = "idx_post_created_by_ids", columnList = "created_by_id")
@@ -33,8 +31,6 @@ public class Post extends CULoggableEntity {
 
     private String bannerKey;
 
-    private boolean hidden;
-
     @Override
     public String toString() {
         return "Post{" +
@@ -43,7 +39,6 @@ public class Post extends CULoggableEntity {
                 ", slug='" + slug + '\'' +
                 ", body='" + body + '\'' +
                 ", bannerKey='" + bannerKey + '\'' +
-                ", hidden=" + hidden +
                 '}';
     }
 }

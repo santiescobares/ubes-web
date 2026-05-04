@@ -93,12 +93,10 @@ public class UserService {
 
         userRepository.save(user);
 
-        redisTemplate.opsForValue().set(
-                tokenBlacklistKey,
-                Instant.now().toString(),
-                token.getExpiresAt().getTime() - System.currentTimeMillis(),
-                TimeUnit.MILLISECONDS
-        );
+        long tokenTtlMs = token.getExpiresAt().getTime() - System.currentTimeMillis();
+        if (tokenTtlMs > 0) {
+            redisTemplate.opsForValue().set(tokenBlacklistKey, Instant.now().toString(), tokenTtlMs, TimeUnit.MILLISECONDS);
+        }
 
         eventPublisher.publishEvent(new UserCreateEvent(user.getId(), user));
 
@@ -118,6 +116,16 @@ public class UserService {
 
         if (dto.school() != null && RequestContextHolder.getCurrentSession().role().surpasses(user.getRole())) {
             user.setSchool(dto.school());
+        }
+
+        if (dto.role() != null) {
+            RoleAuthority callerAuthority = RequestContextHolder.getCurrentSession().role().getAuthority();
+            if (!callerAuthority.surpasses(user.getRole().getAuthority())
+                    || dto.role().getAuthority() == RoleAuthority.EXECUTIVE
+                    || !callerAuthority.surpasses(dto.role().getAuthority())) {
+                throw new InvalidOperationException("You can't assign that role to this user");
+            }
+            user.setRole(dto.role());
         }
 
         eventPublisher.publishEvent(new UserUpdateEvent(RequestContextHolder.getCurrentSession().userId(), user));
@@ -154,6 +162,8 @@ public class UserService {
             user.setPictureKey(null);
             pictureURL = null;
         }
+
+        userRepository.save(user);
 
         eventPublisher.publishEvent(new UserUpdateEvent(RequestContextHolder.getCurrentSession().userId(), user));
 

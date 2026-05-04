@@ -22,7 +22,7 @@ public class Event extends CULoggableEntity {
 
     @Enumerated(EnumType.STRING)
     private EventType type;
-    @Column(unique = true, length = 50)
+    @Column(length = 50)
     private String name;
     @Column(length = 1000)
     private String description;
