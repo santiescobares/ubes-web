@@ -131,12 +131,13 @@ public class SuggestionService {
         }
 
         return suggestions.map(suggestion -> {
-            if (suggestion.isAnonymized() && !isAuthority) {
-                suggestion.setCreatedBy(null);
-            }
-
             VoteStats stat = statsMap.getOrDefault(suggestion.getId(), new VoteStats(0L, 0L));
-            return suggestionMapper.toDTO(suggestion, stat.totalVotes().intValue(), stat.votesInFavor().intValue());
+            SuggestionDTO dto = suggestionMapper.toDTO(suggestion, stat.totalVotes().intValue(), stat.votesInFavor().intValue());
+
+            if (suggestion.isAnonymized() && !isAuthority) {
+                return new SuggestionDTO(dto.id(), dto.createdAt(), dto.updatedAt(), null, dto.content(), dto.totalVotes(), dto.votesInFavor());
+            }
+            return dto;
         });
     }
 
