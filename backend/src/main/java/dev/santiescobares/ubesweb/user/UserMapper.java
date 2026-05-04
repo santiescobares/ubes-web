@@ -20,5 +20,6 @@ public interface UserMapper {
     UserSnapshotDTO toSnapshotDTO(User user);
 
     @Mapping(target = "school", ignore = true)
+    @Mapping(target = "role", ignore = true)
     void updateFromDTO(@MappingTarget User user, UserUpdateDTO dto);
 }

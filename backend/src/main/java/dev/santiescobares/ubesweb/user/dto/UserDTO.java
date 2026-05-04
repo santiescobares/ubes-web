@@ -15,7 +15,6 @@ public record UserDTO(
         String email,
         Role role,
         School school,
-        String pictureURL,
-        boolean active
+        String pictureURL
 ) {
 }
