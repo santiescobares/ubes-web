@@ -33,4 +33,18 @@ public class Event extends CULoggableEntity {
     private Location location;
 
     private String bannerKey;
+
+    @Override
+    public String toString() {
+        return "Event{" +
+                "id=" + id +
+                ", type=" + type +
+                ", name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                ", startingDate=" + startingDate +
+                ", endingDate=" + endingDate +
+                ", location=" + location +
+                ", bannerKey='" + bannerKey + '\'' +
+                '}';
+    }
 }

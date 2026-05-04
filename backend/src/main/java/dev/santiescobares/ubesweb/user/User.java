@@ -38,4 +38,18 @@ public class User extends CUDLoggableEntity {
     private School school;
 
     private String pictureKey;
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "id=" + id +
+                ", firstName='" + firstName + '\'' +
+                ", lastName='" + lastName + '\'' +
+                ", email='" + email + '\'' +
+                ", googleId='" + googleId + '\'' +
+                ", role=" + role +
+                ", school=" + school +
+                ", pictureKey='" + pictureKey + '\'' +
+                '}';
+    }
 }

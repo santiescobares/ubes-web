@@ -34,4 +34,16 @@ public class Post extends CULoggableEntity {
     private String bannerKey;
 
     private boolean hidden;
+
+    @Override
+    public String toString() {
+        return "Post{" +
+                "id=" + id +
+                ", title='" + title + '\'' +
+                ", slug='" + slug + '\'' +
+                ", body='" + body + '\'' +
+                ", bannerKey='" + bannerKey + '\'' +
+                ", hidden=" + hidden +
+                '}';
+    }
 }

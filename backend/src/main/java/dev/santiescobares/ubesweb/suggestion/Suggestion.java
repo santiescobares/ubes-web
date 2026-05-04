@@ -64,4 +64,14 @@ public class Suggestion extends CULoggableEntity {
         this.hiddenAt = null;
         this.hiddenBy = null;
     }
+
+    @Override
+    public String toString() {
+        return "Suggestion{" +
+                "id=" + id +
+                ", content='" + content + '\'' +
+                ", anonymized=" + anonymized +
+                ", hiddenAt=" + hiddenAt +
+                '}';
+    }
 }

@@ -22,4 +22,12 @@ public class SuggestionVoteId implements Serializable {
     public SuggestionVoteId(Suggestion suggestion, User voter) {
         this(suggestion.getId(), voter.getId());
     }
+
+    @Override
+    public String toString() {
+        return "SuggestionVoteId{" +
+                "suggestionId=" + suggestionId +
+                ", voterId=" + voterId +
+                '}';
+    }
 }

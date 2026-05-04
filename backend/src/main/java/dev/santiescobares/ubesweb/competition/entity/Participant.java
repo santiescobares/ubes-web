@@ -38,4 +38,20 @@ public class Participant extends CULoggableEntity {
     private int shirtNumber;
 
     private String studentCertificateKey, medicalCertificateKey;
+
+    @Override
+    public String toString() {
+        return "Participant{" +
+                "id=" + id +
+                ", role=" + role +
+                ", firstName='" + firstName + '\'' +
+                ", lastName='" + lastName + '\'' +
+                ", idType=" + idType +
+                ", idNumber='" + idNumber + '\'' +
+                ", school=" + school +
+                ", shirtNumber=" + shirtNumber +
+                ", studentCertificateKey='" + studentCertificateKey + '\'' +
+                ", medicalCertificateKey='" + medicalCertificateKey + '\'' +
+                '}';
+    }
 }

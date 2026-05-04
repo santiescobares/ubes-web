@@ -50,4 +50,15 @@ public class Punishment extends CLoggableEntity {
         removedBy = remover;
         removeReason = reason;
     }
+
+    @Override
+    public String toString() {
+        return "Punishment{" +
+                "id=" + id +
+                ", reason='" + reason + '\'' +
+                ", expiresAt=" + expiresAt +
+                ", removedAt=" + removedAt +
+                ", removeReason='" + removeReason + '\'' +
+                '}';
+    }
 }

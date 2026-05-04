@@ -81,4 +81,23 @@ public class Competition extends Event {
         if (!(obj instanceof Competition)) return false;
         return ((Competition) obj).getId().equals(getId());
     }
+
+    @Override
+    public String toString() {
+        return "Competition{" +
+                "id=" + getId() +
+                ", name='" + getName() + '\'' +
+                ", type=" + getType() +
+                ", startingDate=" + getStartingDate() +
+                ", endingDate=" + getEndingDate() +
+                ", minParticipants=" + minParticipants +
+                ", maxParticipants=" + maxParticipants +
+                ", requiresShirtNumbers=" + requiresShirtNumbers +
+                ", requiresMedicalCertificates=" + requiresMedicalCertificates +
+                ", registrationStartingDate=" + registrationStartingDate +
+                ", registrationEndingDate=" + registrationEndingDate +
+                ", registrationStatus=" + registrationStatus +
+                ", status=" + status +
+                '}';
+    }
 }

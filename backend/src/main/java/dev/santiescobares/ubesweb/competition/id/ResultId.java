@@ -24,4 +24,13 @@ public class ResultId implements Serializable {
     public ResultId(Competition competition, ParticipantPositionType positionType, Integer positionNumber) {
         this(competition.getId(), positionType, positionNumber);
     }
+
+    @Override
+    public String toString() {
+        return "ResultId{" +
+                "competitionId=" + competitionId +
+                ", positionType=" + positionType +
+                ", positionNumber=" + positionNumber +
+                '}';
+    }
 }

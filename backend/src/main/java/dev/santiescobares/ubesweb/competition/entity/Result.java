@@ -29,4 +29,13 @@ public class Result {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "participant_id")
     private Participant participant;
+
+    @Override
+    public String toString() {
+        return "Result{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", points=" + points +
+                '}';
+    }
 }

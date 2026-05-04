@@ -30,4 +30,13 @@ public class SuggestionVote {
 
     private Instant timestamp;
     private boolean inFavor;
+
+    @Override
+    public String toString() {
+        return "SuggestionVote{" +
+                "id=" + id +
+                ", timestamp=" + timestamp +
+                ", inFavor=" + inFavor +
+                '}';
+    }
 }

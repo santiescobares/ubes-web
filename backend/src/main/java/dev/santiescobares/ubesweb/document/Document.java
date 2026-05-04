@@ -27,4 +27,16 @@ public class Document extends CULoggableEntity {
     private long size;
 
     private String key;
+
+    @Override
+    public String toString() {
+        return "Document{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", type=" + type +
+                ", fileType=" + fileType +
+                ", size=" + size +
+                ", key='" + key + '\'' +
+                '}';
+    }
 }
