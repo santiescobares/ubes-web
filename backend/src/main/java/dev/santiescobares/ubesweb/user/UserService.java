@@ -6,8 +6,8 @@ import dev.santiescobares.ubesweb.auth.token.TokenException;
 import dev.santiescobares.ubesweb.auth.token.TokenService;
 import dev.santiescobares.ubesweb.auth.token.TokenType;
 import dev.santiescobares.ubesweb.config.S3Config;
-import dev.santiescobares.ubesweb.context.RequestContextData;
 import dev.santiescobares.ubesweb.context.RequestContextHolder;
+import dev.santiescobares.ubesweb.context.RequestContextUtil;
 import dev.santiescobares.ubesweb.enums.ResourceType;
 import dev.santiescobares.ubesweb.enums.Role;
 import dev.santiescobares.ubesweb.enums.RoleAuthority;
@@ -28,6 +28,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -180,13 +182,22 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public UserDTO getUserDTO(UUID id) {
-        if (id != null) {
+    public UserDTO getUserDTOByIdOrEmail(UUID id, String email) {
+        User user;
+        if (id != null || email != null) {
             checkCanModifyUser(id);
+            user = id != null
+                    ? getById(id)
+                    : userRepository.findByEmailIgnoreCase(email).orElseThrow(() -> new ResourceNotFoundException(ResourceType.USER));
         } else {
-            id = RequestContextHolder.getCurrentSession().userId();
+            user = getCurrentUser();
         }
-        return userMapper.toDTO(getById(id));
+        return userMapper.toDTO(user);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<UserDTO> getAllUsers(Pageable pageable) {
+        return userRepository.findAll(pageable).map(userMapper::toDTO);
     }
 
     public User getById(UUID id) {
@@ -206,9 +217,6 @@ public class UserService {
     }
 
     private void checkCanModifyUser(UUID userId) {
-        RequestContextData contextData = RequestContextHolder.getCurrentSession();
-        if (!userId.equals(contextData.userId()) && contextData.role().getAuthority() != RoleAuthority.EXECUTIVE) {
-            throw new InvalidOperationException("Can't perform that operation");
-        }
+        RequestContextUtil.checkUserAuthorityOver(userId, "Can't perform that operation", RoleAuthority.EXECUTIVE);
     }
 }
