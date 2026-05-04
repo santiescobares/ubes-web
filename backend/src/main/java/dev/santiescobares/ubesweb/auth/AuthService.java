@@ -120,11 +120,9 @@ public class AuthService {
         DecodedJWT token = tokenService.decodeToken(rawToken);
         if (token == null) return;
 
-        redisTemplate.opsForValue().set(
-                REDIS_TOKEN_BLACKLIST_KEY + token.getId(),
-                Instant.now().toString(),
-                token.getExpiresAt().getTime() - System.currentTimeMillis(),
-                TimeUnit.MILLISECONDS
-        );
+        long ttlMs = token.getExpiresAt().getTime() - System.currentTimeMillis();
+        if (ttlMs > 0) {
+            redisTemplate.opsForValue().set(REDIS_TOKEN_BLACKLIST_KEY + token.getId(), Instant.now().toString(), ttlMs, TimeUnit.MILLISECONDS);
+        }
     }
 }
