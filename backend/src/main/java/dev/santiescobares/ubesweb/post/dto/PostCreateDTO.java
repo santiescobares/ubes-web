@@ -9,7 +9,6 @@ public record PostCreateDTO(
         String title,
         @NotBlank(message = "Body is required")
         @Size(min = 10, max = 100, message = "Body is either too short or too long")
-        String body,
-        boolean hidden
+        String body
 ) {
 }
