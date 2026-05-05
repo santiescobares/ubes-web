@@ -22,32 +22,32 @@ public class SuggestionController {
     private final SuggestionService suggestionService;
 
     @PostMapping
-    public ResponseEntity<SuggestionDTO> createSuggestion(@RequestBody @Valid SuggestionCreateDTO dto) {
+    public ResponseEntity<SuggestionDTO> create(@RequestBody @Valid SuggestionCreateDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(suggestionService.createSuggestion(dto));
     }
 
-    @PostMapping("/vote/{id}")
-    public ResponseEntity<Void> voteSuggestion(@PathVariable Long id, @RequestParam boolean inFavor) {
+    @PostMapping("/{id}/vote")
+    public ResponseEntity<Void> vote(@PathVariable Long id, @RequestParam boolean inFavor) {
         suggestionService.voteSuggestion(id, inFavor);
         return ResponseEntity.ok().build();
     }
 
     @PatchMapping("/{id}/hide")
     @PreAuthorize("hasAuthority('EXECUTIVE')")
-    public ResponseEntity<Void> hideSuggestion(@PathVariable Long id) {
+    public ResponseEntity<Void> hide(@PathVariable Long id) {
         suggestionService.hideSuggestion(id);
         return ResponseEntity.ok().build();
     }
 
     @PatchMapping("/{id}/unhide")
     @PreAuthorize("hasAuthority('EXECUTIVE')")
-    public ResponseEntity<Void> unhideSuggestion(@PathVariable Long id) {
+    public ResponseEntity<Void> unhide(@PathVariable Long id) {
         suggestionService.unhideSuggestion(id);
         return ResponseEntity.ok().build();
     }
 
     @GetMapping
-    public ResponseEntity<Page<SuggestionDTO>> getSuggestions(
+    public ResponseEntity<Page<SuggestionDTO>> getAll(
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         return ResponseEntity.ok(suggestionService.getSuggestionDTOs(pageable));

@@ -184,7 +184,7 @@ class ResultServiceTest {
         try (MockedStatic<LocalDate> dateMock = mockStatic(LocalDate.class, CALLS_REAL_METHODS)) {
             dateMock.when(LocalDate::now).thenReturn(beforeDeadline);
 
-            List<ResultDTO> results = resultService.getResults(1L);
+            List<ResultDTO> results = resultService.findResultDTOs(1L);
 
             assertThat(results).hasSize(1);
             assertThat(results.get(0).points()).isEqualTo(-1);
@@ -204,7 +204,7 @@ class ResultServiceTest {
         try (MockedStatic<LocalDate> dateMock = mockStatic(LocalDate.class, CALLS_REAL_METHODS)) {
             dateMock.when(LocalDate::now).thenReturn(afterDeadline);
 
-            List<ResultDTO> results = resultService.getResults(1L);
+            List<ResultDTO> results = resultService.findResultDTOs(1L);
 
             assertThat(results).hasSize(1);
             assertThat(results.get(0).points()).isEqualTo(50);

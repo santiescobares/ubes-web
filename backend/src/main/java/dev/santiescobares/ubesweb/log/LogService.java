@@ -50,12 +50,12 @@ public class LogService {
     }
 
     @Transactional(readOnly = true)
-    public Page<LogDTO> getLogs(UUID userId, ResourceType resourceType, String resourceId, Action action, Pageable pageable) {
+    public Page<LogDTO> findLogDTOs(UUID userId, ResourceType resourceType, String resourceId, Action action, Pageable pageable) {
         return logRepository.findLogsByFilters(userId, resourceType, resourceId, action, pageable).map(logMapper::toDTO);
     }
 
     @Transactional(readOnly = true)
-    public LogDTO getLogDTO(Long id) {
+    public LogDTO findLogDTOById(Long id) {
         return logMapper.toDTO(logRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException(ResourceType.LOG)));
     }
 }

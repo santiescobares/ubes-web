@@ -24,17 +24,17 @@ public class PunishmentController {
     private final PunishmentService punishmentService;
 
     @PostMapping
-    public ResponseEntity<PunishmentDTO> createPunishment(@RequestBody @Valid PunishmentCreateDTO dto) {
+    public ResponseEntity<PunishmentDTO> create(@RequestBody @Valid PunishmentCreateDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(punishmentService.createPunishment(dto));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<PunishmentDTO> removePunishment(@PathVariable Long id, @RequestBody @Valid PunishmentRemoveDTO dto) {
+    public ResponseEntity<PunishmentDTO> remove(@PathVariable Long id, @RequestBody @Valid PunishmentRemoveDTO dto) {
         return ResponseEntity.ok().body(punishmentService.removePunishment(id, dto));
     }
 
     @GetMapping
-    public ResponseEntity<Page<PunishmentDTO>> getPunishments(
+    public ResponseEntity<Page<PunishmentDTO>> getAll(
             @RequestParam(required = false) Long id,
             @RequestParam(required = false) UUID issuedOnId,
             @RequestParam(required = false) UUID issuedById,

@@ -25,7 +25,7 @@ public class EventController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'PRESS')")
-    public ResponseEntity<EventDTO> createEvent(
+    public ResponseEntity<EventDTO> create(
             @RequestPart("body") @Valid EventCreateDTO dto,
             @RequestPart(value = "bannerFile", required = false) MultipartFile bannerFile
     ) {
@@ -34,28 +34,28 @@ public class EventController {
 
     @PutMapping(path = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'PRESS')")
-    public ResponseEntity<EventDTO> updateEvent(
+    public ResponseEntity<EventDTO> update(
             @PathVariable Long id,
             @RequestPart("body") @Valid EventUpdateDTO dto,
             @RequestPart(value = "bannerFile", required = false) MultipartFile bannerFile,
-            @RequestParam(name = "removeBanner", required = false) Boolean removeBanner
+            @RequestParam(required = false) Boolean removeBanner
     ) {
         return ResponseEntity.ok(eventService.updateEvent(id, dto, bannerFile, removeBanner));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'PRESS')")
-    public ResponseEntity<Void> deleteEvent(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
         eventService.deleteEvent(id);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping
-    public ResponseEntity<List<EventDTO>> getEvents(
-            @RequestParam(name = "id", required = false) Long id,
-            @RequestParam(name = "from", required = false) LocalDateTime from,
-            @RequestParam(name = "to", required = false) LocalDateTime to
+    public ResponseEntity<List<EventDTO>> getAll(
+            @RequestParam(required = false) Long id,
+            @RequestParam(required = false) LocalDateTime from,
+            @RequestParam(required = false) LocalDateTime to
     ) {
-        return ResponseEntity.ok(eventService.getEvents(id, from, to));
+        return ResponseEntity.ok(eventService.findEventDTOs(id, from, to));
     }
 }

@@ -206,7 +206,7 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public Page<UserDTO> getAllUsers(Pageable pageable) {
+    public Page<UserDTO> findAllUserDTOs(Pageable pageable) {
         return userRepository.findAll(pageable).map(userMapper::toDTO);
     }
 

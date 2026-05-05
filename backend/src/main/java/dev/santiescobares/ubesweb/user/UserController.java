@@ -30,45 +30,59 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping
-    public ResponseEntity<UserDTO> createUser(@RequestBody @Valid UserCreateDTO dto) {
+    public ResponseEntity<UserDTO> create(@RequestBody @Valid UserCreateDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(userService.createUser(dto));
     }
 
     @PutMapping
-    public ResponseEntity<UserDTO> updateUser(
-            @RequestParam(required = false) UUID id,
-            @RequestBody @Valid UserUpdateDTO dto
-    ) {
+    public ResponseEntity<UserDTO> update(@RequestBody @Valid UserUpdateDTO dto) {
+        return ResponseEntity.ok(userService.updateUser(null, dto));
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('EXECUTIVE')")
+    public ResponseEntity<UserDTO> update(@PathVariable UUID id, @RequestBody @Valid UserUpdateDTO dto) {
         return ResponseEntity.ok(userService.updateUser(id, dto));
     }
 
     @PatchMapping(value = "/picture", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<UserPictureDTO> updateUserPicture(
-            @RequestParam(required = false) UUID id,
+    public ResponseEntity<UserPictureDTO> updatePicture(
+            @RequestPart(value = "pictureFile", required = false) MultipartFile pictureFile
+    ) {
+        return ResponseEntity.ok(userService.updateUserPicture(null, pictureFile));
+    }
+
+    @PatchMapping(value = "/{id}/picture", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAuthority('EXECUTIVE')")
+    public ResponseEntity<UserPictureDTO> updatePicture(
+            @PathVariable UUID id,
             @RequestPart(value = "pictureFile", required = false) MultipartFile pictureFile
     ) {
         return ResponseEntity.ok(userService.updateUserPicture(id, pictureFile));
     }
 
     @DeleteMapping
-    public ResponseEntity<Void> deleteUser(HttpServletRequest request, HttpServletResponse response) {
+    public ResponseEntity<Void> delete(HttpServletRequest request, HttpServletResponse response) {
         userService.deleteUser(request, response);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping
-    public ResponseEntity<UserDTO> getUser(
-            @RequestParam(required = false) UUID id,
-            @RequestParam(required = false) String email
-    ) {
-        return ResponseEntity.ok(userService.getUserDTOByIdOrEmail(id, email));
+    public ResponseEntity<UserDTO> get(@RequestParam(required = false) String email) {
+        return ResponseEntity.ok(userService.getUserDTOByIdOrEmail(null, email));
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('EXECUTIVE')")
+    public ResponseEntity<UserDTO> get(@PathVariable UUID id) {
+        return ResponseEntity.ok(userService.getUserDTOByIdOrEmail(id, null));
     }
 
     @GetMapping("/all")
     @PreAuthorize("hasAuthority('EXECUTIVE')")
-    public ResponseEntity<Page<UserDTO>> getUsers(
+    public ResponseEntity<Page<UserDTO>> getAll(
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        return ResponseEntity.ok(userService.getAllUsers(pageable));
+        return ResponseEntity.ok(userService.findAllUserDTOs(pageable));
     }
 }

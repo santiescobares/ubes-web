@@ -23,27 +23,27 @@ public class ResultController {
 
     private final ResultService resultService;
 
-    @PostMapping
+    @PostMapping("/{competitionId}")
     @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION')")
-    public ResponseEntity<Void> calculateResults(@RequestParam Long competitionId, @RequestBody List<@Valid ResultCreateDTO> results) {
+    public ResponseEntity<Void> create(@PathVariable Long competitionId, @RequestBody List<@Valid ResultCreateDTO> results) {
         resultService.calculateResults(competitionId, results);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @PutMapping
+    @PutMapping("/{competitionId}/{positionType}/{positionNumber}")
     @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION')")
-    public ResponseEntity<ResultDTO> updateResult(
-            @RequestParam Long competitionId,
-            @RequestParam ParticipantPositionType positionType,
-            @RequestParam Integer positionNumber,
+    public ResponseEntity<Void> update(
+            @PathVariable Long competitionId,
+            @PathVariable ParticipantPositionType positionType,
+            @PathVariable Integer positionNumber,
             @RequestBody @Valid ResultUpdateDTO dto
     ) {
         resultService.updateResult(new ResultId(competitionId, positionType, positionNumber), dto);
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping
-    public ResponseEntity<List<ResultDTO>> getResults(@RequestParam Long competitionId) {
-        return ResponseEntity.ok(resultService.getResults(competitionId));
+    @GetMapping("/{competitionId}")
+    public ResponseEntity<List<ResultDTO>> getAll(@PathVariable Long competitionId) {
+        return ResponseEntity.ok(resultService.findResultDTOs(competitionId));
     }
 }

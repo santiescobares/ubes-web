@@ -112,7 +112,7 @@ public class EventService {
     }
 
     @Transactional(readOnly = true)
-    public List<EventDTO> getEvents(Long id, LocalDateTime from, LocalDateTime to) {
+    public List<EventDTO> findEventDTOs(Long id, LocalDateTime from, LocalDateTime to) {
         List<Event> events = new ArrayList<>();
         if (id != null) {
             events.add(getById(id));

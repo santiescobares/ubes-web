@@ -212,10 +212,10 @@ class UserServiceTest {
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
-    // --- getAllUsers ---
+    // --- findAllUserDTOs ---
 
     @Test
-    void getAllUsers_returnsMappedPage() {
+    void findAllUserDTOs_returnsMappedPage() {
         User user = new User();
         UserDTO userDTO = mock(UserDTO.class);
         Pageable pageable = PageRequest.of(0, 10);
@@ -224,7 +224,7 @@ class UserServiceTest {
         when(userRepository.findAll(pageable)).thenReturn(page);
         when(userMapper.toDTO(user)).thenReturn(userDTO);
 
-        Page<UserDTO> result = userService.getAllUsers(pageable);
+        Page<UserDTO> result = userService.findAllUserDTOs(pageable);
 
         assertThat(result.getContent()).containsExactly(userDTO);
     }

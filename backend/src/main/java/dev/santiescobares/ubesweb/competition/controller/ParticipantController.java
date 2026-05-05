@@ -28,7 +28,7 @@ public class ParticipantController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION', 'DELEGATE')")
-    public ResponseEntity<Void> addParticipants(
+    public ResponseEntity<Void> add(
             @RequestParam Long competitionId,
             @RequestPart("participants") List<@Valid ParticipantCreateDTO> participants,
             @RequestPart(value = "studentCertificateFiles", required = false) List<MultipartFile> studentCertificateFiles,
@@ -40,19 +40,19 @@ public class ParticipantController {
 
     @PutMapping(path = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION')")
-    public ResponseEntity<ParticipantDTO> updateParticipant(
+    public ResponseEntity<ParticipantDTO> update(
             @PathVariable Long id,
             @RequestPart("body") @Valid ParticipantUpdateDTO dto,
             @RequestPart(value = "studentCertificateFile", required = false) MultipartFile studentCertificateFile,
-            @RequestParam(name = "removestudentCertificate", required = false) Boolean removestudentCertificate,
+            @RequestParam(required = false) Boolean removeStudentCertificate,
             @RequestPart(value = "medicalCertificateFile", required = false) MultipartFile medicalCertificateFile,
-            @RequestParam(name = "removemedicalCertificate", required = false) Boolean removeMedicalCertificate
+            @RequestParam(required = false) Boolean removeMedicalCertificate
     ) {
         return ResponseEntity.ok(participantService.updateParticipant(
                 id,
                 dto,
                 studentCertificateFile,
-                removestudentCertificate,
+                removeStudentCertificate,
                 medicalCertificateFile,
                 removeMedicalCertificate
         ));
@@ -60,13 +60,13 @@ public class ParticipantController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION')")
-    public ResponseEntity<Void> removeParticipant(@PathVariable Long id) {
+    public ResponseEntity<Void> remove(@PathVariable Long id) {
         participantService.removeParticipant(id);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping
-    public ResponseEntity<Page<ParticipantDTO>> getParticipants(
+    public ResponseEntity<Page<ParticipantDTO>> getAll(
             @RequestParam Long competitionId,
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {

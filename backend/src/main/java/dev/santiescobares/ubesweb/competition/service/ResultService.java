@@ -122,7 +122,7 @@ public class ResultService {
     }
 
     @Transactional(readOnly = true)
-    public List<ResultDTO> getResults(Long competitionId) {
+    public List<ResultDTO> findResultDTOs(Long competitionId) {
         List<Result> results = resultRepository.findAllByCompetitionId(competitionId);
         boolean hidePoints = LocalDate.now().isBefore(Global.COMPETITION_RESULTS_DEADLINE());
 

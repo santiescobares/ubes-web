@@ -22,18 +22,18 @@ public class LogController {
     private final LogService logService;
 
     @GetMapping("/{id}")
-    public ResponseEntity<LogDTO> getLog(@PathVariable Long id) {
-        return ResponseEntity.ok(logService.getLogDTO(id));
+    public ResponseEntity<LogDTO> get(@PathVariable Long id) {
+        return ResponseEntity.ok(logService.findLogDTOById(id));
     }
 
     @GetMapping
-    public ResponseEntity<Page<LogDTO>> getLogs(
+    public ResponseEntity<Page<LogDTO>> getAll(
             @RequestParam(required = false) UUID userId,
             @RequestParam(required = false) ResourceType resourceType,
             @RequestParam(required = false) String resourceId,
             @RequestParam(required = false) Action action,
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        return ResponseEntity.ok(logService.getLogs(userId, resourceType, resourceId, action, pageable));
+        return ResponseEntity.ok(logService.findLogDTOs(userId, resourceType, resourceId, action, pageable));
     }
 }

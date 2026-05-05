@@ -26,7 +26,7 @@ public class PostController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'PRESS')")
-    public ResponseEntity<PostDTO> createPost(
+    public ResponseEntity<PostDTO> create(
             @RequestPart("body") @Valid PostCreateDTO dto,
             @RequestPart(value = "bannerFile", required = false) MultipartFile bannerFile
     ) {
@@ -35,7 +35,7 @@ public class PostController {
 
     @PutMapping(path = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'PRESS')")
-    public ResponseEntity<PostDTO> updatePost(
+    public ResponseEntity<PostDTO> update(
             @PathVariable Long id,
             @RequestPart("body") @Valid PostUpdateDTO dto,
             @RequestPart(value = "bannerFile", required = false) MultipartFile bannerFile,
@@ -46,18 +46,18 @@ public class PostController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'PRESS')")
-    public ResponseEntity<Void> deletePost(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
         postService.deletePost(id);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/slug/{slug}")
-    public ResponseEntity<PostDTO> getPostBySlug(@PathVariable String slug) {
+    public ResponseEntity<PostDTO> getBySlug(@PathVariable String slug) {
         return ResponseEntity.ok(postService.getPostDTOBySlug(slug));
     }
 
     @GetMapping
-    public ResponseEntity<Page<PostDTO>> getPosts(
+    public ResponseEntity<Page<PostDTO>> getAll(
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         return ResponseEntity.ok(postService.getPostDTOs(pageable));

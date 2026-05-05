@@ -29,7 +29,7 @@ public class CompetitionController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION')")
-    public ResponseEntity<CompetitionDTO> createCompetition(
+    public ResponseEntity<CompetitionDTO> create(
             @RequestPart("body") @Valid CompetitionCreateDTO dto,
             @RequestPart(value = "bannerFile", required = false) MultipartFile bannerFile,
             @RequestPart(value = "regulationDocumentFile", required = false) MultipartFile regulationDocumentFile
@@ -40,13 +40,13 @@ public class CompetitionController {
 
     @PutMapping(path = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION')")
-    public ResponseEntity<CompetitionDTO> updateCompetition(
+    public ResponseEntity<CompetitionDTO> update(
             @PathVariable Long id,
             @RequestPart("body") @Valid CompetitionUpdateDTO dto,
             @RequestPart(value = "bannerFile", required = false) MultipartFile bannerFile,
-            @RequestParam(name = "removeBanner", required = false) Boolean removeBanner,
+            @RequestParam(required = false) Boolean removeBanner,
             @RequestPart(value = "regulationDocumentFile", required = false) MultipartFile regulationDocumentFile,
-            @RequestParam(name = "removeRegulationDocument", required = false) Boolean removeRegulationDocument
+            @RequestParam(required = false) Boolean removeRegulationDocument
     ) {
         return ResponseEntity.ok(competitionService.updateCompetition(
                 id,
@@ -60,14 +60,14 @@ public class CompetitionController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION')")
-    public ResponseEntity<Void> deleteCompetition(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
         competitionService.deleteCompetition(id);
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{id}/schedule-registration")
     @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION')")
-    public ResponseEntity<Void> scheduleCompetitionRegistration(
+    public ResponseEntity<Void> scheduleRegistration(
             @PathVariable Long id,
             @RequestParam LocalDateTime startingDate,
             @RequestParam LocalDateTime endingDate
@@ -78,14 +78,14 @@ public class CompetitionController {
 
     @PatchMapping("/{id}/open-registration")
     @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION')")
-    public ResponseEntity<Void> openCompetitionRegistration(@PathVariable Long id) {
+    public ResponseEntity<Void> openRegistration(@PathVariable Long id) {
         competitionService.openCompetitionRegistration(id);
         return ResponseEntity.ok().build();
     }
 
     @PatchMapping("/{id}/close-registration")
     @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION')")
-    public ResponseEntity<Void> closeCompetitionRegistration(
+    public ResponseEntity<Void> closeRegistration(
             @PathVariable Long id,
             @RequestParam(defaultValue = "false") boolean cancel
     ) {
@@ -95,32 +95,32 @@ public class CompetitionController {
 
     @PatchMapping("/{id}/start")
     @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION')")
-    public ResponseEntity<Void> startCompetition(@PathVariable Long id) {
+    public ResponseEntity<Void> start(@PathVariable Long id) {
         competitionService.startCompetition(id);
         return ResponseEntity.ok().build();
     }
 
     @PatchMapping("/{id}/end")
     @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION')")
-    public ResponseEntity<Void> endCompetition(@PathVariable Long id) {
+    public ResponseEntity<Void> end(@PathVariable Long id) {
         competitionService.endCompetition(id);
         return ResponseEntity.ok().build();
     }
 
     @PatchMapping("/{id}/cancel")
     @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION')")
-    public ResponseEntity<Void> cancelCompetition(@PathVariable Long id) {
+    public ResponseEntity<Void> cancel(@PathVariable Long id) {
         competitionService.cancelCompetition(id);
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<CompetitionDTO> getCompetition(@PathVariable Long id) {
+    public ResponseEntity<CompetitionDTO> get(@PathVariable Long id) {
         return ResponseEntity.ok(competitionService.getCompetitionDTO(id));
     }
 
     @GetMapping
-    public ResponseEntity<Page<CompetitionDTO>> getCompetitions(
+    public ResponseEntity<Page<CompetitionDTO>> getAll(
             @PageableDefault(sort = "startingDate", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         return ResponseEntity.ok(competitionService.getCompetitionDTOs(pageable));
