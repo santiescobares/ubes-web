@@ -1,0 +1,13 @@
+{
+  "name": "ubes-web-frontend",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:landing": "npm run dev -w @ubes/landing",
+    "dev:panel": "npm run dev -w @ubes/panel",
+    "build": "npm run build --workspaces --if-present"
+  }
+}
