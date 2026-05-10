@@ -19,11 +19,11 @@ import dev.santiescobares.ubesweb.context.RequestContextHolder;
 import dev.santiescobares.ubesweb.enums.IdType;
 import dev.santiescobares.ubesweb.enums.ResourceType;
 import dev.santiescobares.ubesweb.enums.Role;
+import dev.santiescobares.ubesweb.enums.School;
 import dev.santiescobares.ubesweb.exception.type.InvalidOperationException;
+import dev.santiescobares.ubesweb.exception.type.ResourceAlreadyExistsException;
 import dev.santiescobares.ubesweb.exception.type.ResourceNotFoundException;
 import dev.santiescobares.ubesweb.service.StorageService;
-import dev.santiescobares.ubesweb.user.User;
-import dev.santiescobares.ubesweb.user.UserService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,16 +40,16 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ParticipantServiceTest {
 
     @Mock CompetitionService competitionService;
-    @Mock UserService userService;
     @Mock StorageService storageService;
     @Mock ParticipantRepository participantRepository;
     @Mock CompetitionRepository competitionRepository;
@@ -72,75 +72,86 @@ class ParticipantServiceTest {
         RequestContextHolder.clear();
     }
 
-    // --- addParticipants ---
+    // --- addParticipant (individual, para authority) ---
 
     @Test
-    void addParticipants_whenRegistrationUnavailable_andUserHasNoAuthority_throwsInvalidOperationException() {
-        RequestContextHolder.setCurrentSession(new RequestContextData(currentUserId, Role.USER, "test@ubes.com"));
-
-        Competition competition = new Competition();
-        competition.setId(1L);
-        competition.setRegistrationStatus(RegistrationStatus.SCHEDULED);
-
-        User currentUser = new User();
-        currentUser.setRole(Role.USER);
+    void addParticipant_withDuplicateDocument_throwsResourceAlreadyExistsException() {
+        Competition competition = competition(1L, RegistrationStatus.SCHEDULED);
+        ParticipantCreateDTO dto = participantDTO(ParticipantRole.PARTICIPANT, IdType.DNI, "12345678", null);
 
         when(competitionService.getById(1L)).thenReturn(competition);
-        when(userService.getCurrentUser()).thenReturn(currentUser);
+        when(participantRepository.existsByCompetitionIdAndIdTypeAndIdNumber(1L, IdType.DNI, "12345678"))
+                .thenReturn(true);
 
-        ParticipantCreateDTO participantDTO = new ParticipantCreateDTO(
-                ParticipantRole.PARTICIPANT, "Juan", "Pérez", IdType.DNI, "12345678", null, 0, null, null
-        );
+        assertThatThrownBy(() -> participantService.addParticipant(1L, dto, null, null))
+                .isInstanceOf(ResourceAlreadyExistsException.class);
+    }
 
-        assertThatThrownBy(() -> participantService.addParticipants(1L, List.of(participantDTO), null, null))
+    @Test
+    void addParticipant_withMaxCoachesExceeded_throwsInvalidOperationException() {
+        Competition competition = competition(1L, RegistrationStatus.SCHEDULED);
+        competition.setMaxCoaches(1);
+
+        Participant existingCoach = new Participant();
+        existingCoach.setRole(ParticipantRole.COACH);
+        existingCoach.setSchool(School.ENET);
+        competition.addParticipant(existingCoach);
+
+        ParticipantCreateDTO dto = participantDTO(ParticipantRole.COACH, IdType.DNI, "99999999", School.ENET);
+
+        when(competitionService.getById(1L)).thenReturn(competition);
+        when(participantRepository.existsByCompetitionIdAndIdTypeAndIdNumber(1L, IdType.DNI, "99999999"))
+                .thenReturn(false);
+
+        assertThatThrownBy(() -> participantService.addParticipant(1L, dto, null, null))
                 .isInstanceOf(InvalidOperationException.class);
     }
 
     @Test
-    void addParticipants_whenRegistrationUnavailable_andUserIsAuthority_proceeds() {
-        Competition competition = new Competition();
-        competition.setId(1L);
-        competition.setRegistrationStatus(RegistrationStatus.SCHEDULED);
-        competition.setRequiresMedicalCertificates(false);
-
-        User currentUser = new User();
-        currentUser.setRole(Role.SPORT_SECRETARY);
-
+    void addParticipant_withValidData_savesAndPublishesEvent() {
+        Competition competition = competition(1L, RegistrationStatus.SCHEDULED);
+        competition.setMaxCoaches(5);
+        ParticipantCreateDTO dto = participantDTO(ParticipantRole.PARTICIPANT, IdType.DNI, "12345678", School.ENET);
         Participant participant = new Participant();
-        ParticipantCreateDTO participantDTO = new ParticipantCreateDTO(
-                ParticipantRole.PARTICIPANT, "Juan", "Pérez", IdType.DNI, "12345678", null, 0, null, null
-        );
 
         when(competitionService.getById(1L)).thenReturn(competition);
-        when(userService.getCurrentUser()).thenReturn(currentUser);
-        when(participantMapper.toEntity(participantDTO)).thenReturn(participant);
+        when(participantRepository.existsByCompetitionIdAndIdTypeAndIdNumber(1L, IdType.DNI, "12345678"))
+                .thenReturn(false);
+        when(participantMapper.toEntity(dto)).thenReturn(participant);
+        when(participantMapper.toDTO(participant)).thenReturn(mock(ParticipantDTO.class));
 
-        participantService.addParticipants(1L, List.of(participantDTO), null, null);
+        participantService.addParticipant(1L, dto, null, null);
 
         verify(competitionRepository).save(competition);
         verify(eventPublisher).publishEvent(any(CompetitionAddParticipantsEvent.class));
     }
 
+    // --- addParticipants (bulk, para delegate) ---
+
+    @Test
+    void addParticipants_whenRegistrationUnavailable_throwsInvalidOperationException() {
+        Competition competition = competition(1L, RegistrationStatus.SCHEDULED);
+        when(competitionService.getById(1L)).thenReturn(competition);
+
+        ParticipantCreateDTO dto = participantDTO(ParticipantRole.PARTICIPANT, IdType.DNI, "12345678", null);
+
+        assertThatThrownBy(() -> participantService.addParticipants(1L, List.of(dto), null, null))
+                .isInstanceOf(InvalidOperationException.class);
+    }
+
     @Test
     void addParticipants_withValidData_savesAndPublishesEvent() {
-        Competition competition = new Competition();
-        competition.setId(1L);
-        competition.setRegistrationStatus(RegistrationStatus.AVAILABLE);
-        competition.setRequiresMedicalCertificates(false);
-
-        User currentUser = new User();
-        currentUser.setRole(Role.USER);
-
+        Competition competition = competition(1L, RegistrationStatus.AVAILABLE);
+        competition.setMaxCoaches(5);
+        ParticipantCreateDTO dto = participantDTO(ParticipantRole.PARTICIPANT, IdType.DNI, "87654321", School.ENET);
         Participant participant = new Participant();
-        ParticipantCreateDTO participantDTO = new ParticipantCreateDTO(
-                ParticipantRole.PARTICIPANT, "Ana", "Gómez", IdType.DNI, "87654321", null, 5, null, null
-        );
 
         when(competitionService.getById(1L)).thenReturn(competition);
-        when(userService.getCurrentUser()).thenReturn(currentUser);
-        when(participantMapper.toEntity(participantDTO)).thenReturn(participant);
+        when(participantRepository.existsByCompetitionIdAndIdTypeAndIdNumber(1L, IdType.DNI, "87654321"))
+                .thenReturn(false);
+        when(participantMapper.toEntity(dto)).thenReturn(participant);
 
-        participantService.addParticipants(1L, List.of(participantDTO), null, null);
+        participantService.addParticipants(1L, List.of(dto), null, null);
 
         verify(competitionRepository).save(competition);
         verify(eventPublisher).publishEvent(any(CompetitionAddParticipantsEvent.class));
@@ -150,16 +161,28 @@ class ParticipantServiceTest {
 
     @Test
     void removeParticipant_valid_removesFromCompetitionAndPublishesEvent() {
-        Competition competition = new Competition();
-        competition.setId(1L);
+        Competition competition = competition(1L, RegistrationStatus.AVAILABLE);
         Participant participant = new Participant();
         participant.setCompetition(competition);
 
         when(participantRepository.findById(1L)).thenReturn(Optional.of(participant));
 
-        participantService.removeParticipant(1L);
+        participantService.removeParticipant(1L, 1L);
 
         verify(eventPublisher).publishEvent(any(CompetitionRemoveParticipantEvent.class));
+    }
+
+    @Test
+    void removeParticipant_participantBelongsToDifferentCompetition_throwsInvalidOperationException() {
+        Competition competition = competition(1L, RegistrationStatus.AVAILABLE);
+        Competition other = competition(2L, RegistrationStatus.AVAILABLE);
+        Participant participant = new Participant();
+        participant.setCompetition(other);
+
+        when(participantRepository.findById(1L)).thenReturn(Optional.of(participant));
+
+        assertThatThrownBy(() -> participantService.removeParticipant(1L, 1L))
+                .isInstanceOf(InvalidOperationException.class);
     }
 
     // --- getParticipantDTOs ---
@@ -187,5 +210,19 @@ class ParticipantServiceTest {
 
         assertThatThrownBy(() -> participantService.getById(99L))
                 .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    // --- helpers ---
+
+    private Competition competition(Long id, RegistrationStatus registrationStatus) {
+        Competition competition = new Competition();
+        competition.setId(id);
+        competition.setRegistrationStatus(registrationStatus);
+        competition.setRequiresMedicalCertificates(false);
+        return competition;
+    }
+
+    private ParticipantCreateDTO participantDTO(ParticipantRole role, IdType idType, String idNumber, School school) {
+        return new ParticipantCreateDTO(role, "Juan", "Pérez", idType, idNumber, school, 0, null, null);
     }
 }
