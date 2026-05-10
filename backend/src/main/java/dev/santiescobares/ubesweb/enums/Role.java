@@ -27,6 +27,7 @@ public enum Role {
     IIRR_PROSECRETARY(RoleAuthority.NONE),
     ADMIN_SECRETARY(RoleAuthority.CANTEEN),
     ADMIN_PROSECRETARY(RoleAuthority.CANTEEN),
+    DELEGATE(RoleAuthority.DELEGATE),
     USER(RoleAuthority.NONE);
 
     private final RoleAuthority authority;

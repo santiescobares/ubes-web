@@ -13,7 +13,7 @@ public class Location {
     @Column(name = "location_name", length = 100)
     private String name;
     @Column(name = "location_latitude")
-    private double latitude;
+    private Double latitude;
     @Column(name = "location_longitude")
-    private double longitude;
+    private Double longitude;
 }

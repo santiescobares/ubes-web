@@ -9,7 +9,8 @@ import java.time.Month;
 public final class Global {
 
     public final String BASE_URL = "/api/v1";
-    public final String PROD_URL = "http://localhost:5173";
+    public final String PROD_URL_LANDING = "http://localhost:5173";
+    public final String PROD_URL_PANEL = "http://localhost:5174";
 
     public final String ACCESS_TOKEN_COOKIE = "access_token";
 

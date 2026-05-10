@@ -23,7 +23,7 @@ public class Log extends CLoggableEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id") // TODO implement a "system" user with UUID = 0 to keep data consistency
     private User user;
 
     @Enumerated(EnumType.STRING)

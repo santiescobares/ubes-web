@@ -7,7 +7,7 @@ public record LocationDTO(
         @NotBlank(message = "Name is required")
         @Size(max = 100, message = "Name is too long")
         String name,
-        double latitude,
-        double longitude
+        Double latitude,
+        Double longitude
 ) {
 }
