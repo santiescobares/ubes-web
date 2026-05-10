@@ -21,6 +21,7 @@ public record CompetitionDTO(
         DocumentDTO regulationDocument,
         int minParticipants,
         int maxParticipants,
+        int maxCoaches,
         boolean requiresShirtNumbers,
         boolean requiresMedicalCertificates,
         LocalDateTime registrationStartingDate,

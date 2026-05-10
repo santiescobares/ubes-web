@@ -18,9 +18,7 @@ public record ParticipantUpdateDTO(
         @Min(value = 0, message = "Shirt number must be between 0 and 99")
         @Max(value = 99, message = "Shirt number must be between 0 and 99")
         Integer shirtNumber,
-        @Size(max = 255, message = "Student certificate file name is too long")
-        String studentCertificateFileRef,
-        @Size(max = 255, message = "Medical certificate file name is too long")
-        String medicalCertificateFileRef
+        Boolean removeStudentCertificate,
+        Boolean removeMedicalCertificate
 ) {
 }

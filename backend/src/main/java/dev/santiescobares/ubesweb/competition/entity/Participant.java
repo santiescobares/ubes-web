@@ -9,9 +9,15 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "competition_participants", indexes = {
-        @Index(name = "idx_competition_participant_competitions", columnList = "competition_id")
-})
+@Table(
+        name = "competition_participants",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uq_participant_competition_id_type_number", columnNames = {"competition_id", "id_type", "id_number"})
+        },
+        indexes = {
+                @Index(name = "idx_competition_participant_competitions", columnList = "competition_id")
+        }
+)
 @Getter
 @Setter
 public class Participant extends CULoggableEntity {

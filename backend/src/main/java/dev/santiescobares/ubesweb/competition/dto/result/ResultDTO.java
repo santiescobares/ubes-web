@@ -4,6 +4,7 @@ import dev.santiescobares.ubesweb.competition.dto.participant.ParticipantSnapsho
 import dev.santiescobares.ubesweb.competition.enums.ParticipantPositionType;
 
 public record ResultDTO(
+        Long id,
         ParticipantPositionType positionType,
         Integer positionNumber,
         String name,
