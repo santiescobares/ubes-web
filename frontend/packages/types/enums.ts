@@ -24,18 +24,18 @@ export const RoleAuthority = {
 export type RoleAuthority = (typeof RoleAuthority)[keyof typeof RoleAuthority]
 
 export const School = {
-  NORMAL: 'NORMAL',
   HUERTO: 'HUERTO',
   SAN_JOSE: 'SAN_JOSE',
-  IPET_267: 'IPET_267',
-  COMERCIO: 'COMERCIO',
-  AGROTECNICA: 'AGROTECNICA',
-  EX_NACIONAL: 'EX_NACIONAL',
-  SAN_ANTONIO: 'SAN_ANTONIO',
-  IPEM_148: 'IPEM_148',
-  BELGRANO: 'BELGRANO',
+  NORMAL: 'NORMAL',
+  ENET: 'ENET',
+  ENA: 'ENA',
+  POLIVALENTE: 'POLIVALENTE',
+  COMERCIAL: 'COMERCIAL',
+  ROBERTINA: 'ROBERTINA',
+  PROA: 'PROA',
+  NACIONAL: 'NACIONAL',
   CENMA: 'CENMA',
-  SAGRADA_FAMILIA: 'SAGRADA_FAMILIA',
+  MONTESSORI: 'MONTESSORI',
 } as const
 export type School = (typeof School)[keyof typeof School]
 
@@ -49,40 +49,38 @@ export const EventType = {
 export type EventType = (typeof EventType)[keyof typeof EventType]
 
 export const CompetitionStatus = {
-  DRAFT: 'DRAFT',
   SCHEDULED: 'SCHEDULED',
-  REGISTRATION_OPEN: 'REGISTRATION_OPEN',
-  REGISTRATION_CLOSED: 'REGISTRATION_CLOSED',
-  IN_PROGRESS: 'IN_PROGRESS',
+  ON_GOING: 'ON_GOING',
   FINISHED: 'FINISHED',
-  CANCELLED: 'CANCELLED',
+  CANCELED: 'CANCELED',
 } as const
 export type CompetitionStatus = (typeof CompetitionStatus)[keyof typeof CompetitionStatus]
 
 export const RegistrationStatus = {
+  UNAVAILABLE: 'UNAVAILABLE',
   SCHEDULED: 'SCHEDULED',
-  OPEN: 'OPEN',
-  CLOSED: 'CLOSED',
+  AVAILABLE: 'AVAILABLE',
+  EXPIRED: 'EXPIRED',
+  CANCELED: 'CANCELED',
 } as const
 export type RegistrationStatus = (typeof RegistrationStatus)[keyof typeof RegistrationStatus]
 
 export const ParticipantRole = {
-  PLAYER: 'PLAYER',
+  PARTICIPANT: 'PARTICIPANT',
   COACH: 'COACH',
-  CAPTAIN: 'CAPTAIN',
 } as const
 export type ParticipantRole = (typeof ParticipantRole)[keyof typeof ParticipantRole]
 
 export const ParticipantPositionType = {
   INDIVIDUAL: 'INDIVIDUAL',
-  TEAM: 'TEAM',
+  SCHOOL: 'SCHOOL',
+  SUPPORTER: 'SUPPORTER',
 } as const
 export type ParticipantPositionType = (typeof ParticipantPositionType)[keyof typeof ParticipantPositionType]
 
 export const IdType = {
   DNI: 'DNI',
   PASSPORT: 'PASSPORT',
-  LE: 'LE',
 } as const
 export type IdType = (typeof IdType)[keyof typeof IdType]
 

@@ -15,6 +15,7 @@ export interface CompetitionDTO {
   regulationDocument: DocumentDTO | null
   minParticipants: number
   maxParticipants: number
+  maxCoaches: number
   requiresShirtNumbers: boolean
   requiresMedicalCertificates: boolean
   registrationStartingDate: string | null
@@ -31,6 +32,7 @@ export interface CompetitionCreateDTO {
   location: LocationDTO
   minParticipants: number
   maxParticipants: number
+  maxCoaches: number
   requiresShirtNumbers: boolean
   requiresMedicalCertificates: boolean
 }
@@ -43,6 +45,7 @@ export interface CompetitionUpdateDTO {
   location?: LocationDTO
   minParticipants?: number
   maxParticipants?: number
+  maxCoaches?: number
   requiresShirtNumbers?: boolean
   requiresMedicalCertificates?: boolean
 }
@@ -65,6 +68,8 @@ export interface ParticipantDTO {
   idNumber: string
   school: School
   shirtNumber: number
+  studentCertificateURL: string | null
+  medicalCertificateURL: string | null
 }
 
 export interface ParticipantCreateDTO {
@@ -75,29 +80,48 @@ export interface ParticipantCreateDTO {
   idNumber: string
   school: School
   shirtNumber?: number
-  competitionId: string
+  studentCertificateFileRef?: string
+  medicalCertificateFileRef?: string
 }
 
 export interface ParticipantUpdateDTO {
   role?: ParticipantRole
+  firstName?: string
+  lastName?: string
+  idType?: IdType
+  idNumber?: string
+  school?: School
   shirtNumber?: number
+  removeStudentCertificate?: boolean
+  removeMedicalCertificate?: boolean
 }
 
 export interface ResultDTO {
+  id: string
   positionType: ParticipantPositionType
   positionNumber: number
   name: string
   points: number
-  participant: ParticipantSnapshotDTO
+  participant: ParticipantSnapshotDTO | null
 }
 
 export interface ResultCreateDTO {
   positionType: ParticipantPositionType
-  positionNumber: number
-  participantId: string
-  points: number
+  name: string
+  participantId?: string
 }
 
 export interface ResultUpdateDTO {
-  points?: number
+  name?: string
+  participantId?: string
+  removeParticipant?: boolean
+}
+
+export interface ResultOrderEntry {
+  id: string
+  positionNumber: number
+}
+
+export interface ResultReorderDTO {
+  entries: ResultOrderEntry[]
 }
