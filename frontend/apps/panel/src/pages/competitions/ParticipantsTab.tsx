@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ChevronLeft, ChevronRight, Filter, MoreVertical, Plus, Search, X } from 'lucide-react'
+import { MoreVertical, Plus, Search, X } from 'lucide-react'
 import participantService from '@/services/participantService'
-import { SCHOOL_LABEL, PARTICIPANT_ROLE_LABEL } from '@/lib/labels'
+import { SCHOOL_LABELS, PARTICIPANT_ROLE_LABELS } from '@/lib/labels'
 import ParticipantViewModal from './ParticipantViewModal'
 import ParticipantFormModal from './ParticipantFormModal'
 import type { ParticipantDTO } from '@ubes/types'
@@ -15,11 +15,7 @@ interface Props {
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50]
 
-export default function ParticipantsTab({
-  competitionId,
-  requiresShirtNumbers,
-  requiresMedicalCertificates,
-}: Props) {
+export default function ParticipantsTab({ competitionId, requiresShirtNumbers, requiresMedicalCertificates }: Props) {
   const [data, setData] = useState<Page<ParticipantDTO> | null>(null)
   const [loading, setLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(0)
@@ -33,56 +29,30 @@ export default function ParticipantsTab({
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [viewingParticipant, setViewingParticipant] = useState<ParticipantDTO | null>(null)
   const [editingParticipant, setEditingParticipant] = useState<ParticipantDTO | null | undefined>(undefined)
-  // undefined = form closed, null = create mode, ParticipantDTO = edit mode
   const [showForm, setShowForm] = useState(false)
 
-  // Debounce search input
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setSearch(searchInput)
-      setCurrentPage(0)
-    }, 300)
+    const timer = setTimeout(() => { setSearch(searchInput); setCurrentPage(0) }, 300)
     return () => clearTimeout(timer)
   }, [searchInput])
 
   const load = useCallback(() => {
     setLoading(true)
     participantService
-      .getAll(competitionId, {
-        page: currentPage,
-        size: pageSize,
-        search: search || undefined,
-      })
+      .getAll(competitionId, { page: currentPage, size: pageSize, search: search || undefined })
       .then(setData)
       .finally(() => setLoading(false))
   }, [competitionId, currentPage, pageSize, search])
 
-  useEffect(() => {
-    load()
-  }, [load])
+  useEffect(() => { load() }, [load])
 
-  function openCreate() {
-    setEditingParticipant(null)
-    setShowForm(true)
-    setOpenMenuId(null)
-  }
-
-  function openEdit(p: ParticipantDTO) {
-    setViewingParticipant(null)
-    setEditingParticipant(p)
-    setShowForm(true)
-    setOpenMenuId(null)
-  }
-
-  function openView(p: ParticipantDTO) {
-    setViewingParticipant(p)
-    setOpenMenuId(null)
-  }
+  function openCreate() { setEditingParticipant(null); setShowForm(true); setOpenMenuId(null) }
+  function openEdit(p: ParticipantDTO) { setViewingParticipant(null); setEditingParticipant(p); setShowForm(true); setOpenMenuId(null) }
+  function openView(p: ParticipantDTO) { setViewingParticipant(p); setOpenMenuId(null) }
 
   function handleSaved(p: ParticipantDTO) {
     setShowForm(false)
     setEditingParticipant(undefined)
-    // Optimistically update the row if editing, otherwise reload
     setData((prev) => {
       if (!prev) return prev
       const idx = prev.content.findIndex((x) => x.id === p.id)
@@ -96,19 +66,11 @@ export default function ParticipantsTab({
     load()
   }
 
-  function handleDeleted() {
-    setShowForm(false)
-    setEditingParticipant(undefined)
-    load()
-  }
+  function handleDeleted() { setShowForm(false); setEditingParticipant(undefined); load() }
 
   function toggleSearch() {
     setSearchVisible((v) => {
-      if (v) {
-        setSearchInput('')
-      } else {
-        setTimeout(() => searchRef.current?.focus(), 50)
-      }
+      if (v) { setSearchInput('') } else { setTimeout(() => searchRef.current?.focus(), 50) }
       return !v
     })
   }
@@ -117,115 +79,77 @@ export default function ParticipantsTab({
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
+      <div className="panel-toolbar">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           {searchVisible ? (
-            <div className="flex items-center gap-1 border border-gray-300 rounded-lg px-2 py-1 bg-white">
-              <Search size={13} className="text-gray-400 shrink-0" />
-              <input
-                ref={searchRef}
-                type="text"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Buscar participante..."
-                className="text-sm outline-none w-48 text-gray-800 placeholder-gray-400"
-              />
-              <button
-                onClick={toggleSearch}
-                className="text-gray-400 hover:text-gray-600 shrink-0"
-              >
-                <X size={13} />
+            <div className="search-bar">
+              <Search size={13} className="search-bar-icon" />
+              <input ref={searchRef} className="search-bar-input" type="text" value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)} placeholder="Buscar participante..." />
+              <button onClick={toggleSearch} style={{ position: 'absolute', right: 8, color: 'var(--muted-light)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}>
+                <X size={12} />
               </button>
             </div>
           ) : (
-            <button
-              onClick={toggleSearch}
-              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-              title="Buscar"
-            >
-              <Search size={16} />
+            <button className="action-btn" title="Buscar" onClick={toggleSearch}>
+              <Search size={14} />
             </button>
           )}
-          <button
-            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-            title="Filtrar"
-          >
-            <Filter size={16} />
+        </div>
+        <div className="panel-toolbar-right">
+          <button className="btn btn-primary" onClick={openCreate}>
+            <Plus size={13} /> Agregar
           </button>
         </div>
-        <button
-          onClick={openCreate}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <Plus size={13} />
-          Agregar
-        </button>
       </div>
 
-      {/* Table */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        {loading && participants.length === 0 ? (
-          <div className="text-center py-16 text-gray-400 text-sm">Cargando...</div>
-        ) : participants.length === 0 ? (
-          <div className="text-center py-16 text-gray-400 text-sm">
-            {search ? 'No hay resultados para esa búsqueda.' : 'Aún no hay participantes.'}
-          </div>
-        ) : (
-          <table className="w-full text-sm">
+      {loading && participants.length === 0 ? (
+        <div className="empty-state"><p className="empty-state-text">Cargando...</p></div>
+      ) : participants.length === 0 ? (
+        <div className="empty-state">
+          <p className="empty-state-text">
+            {search ? 'Sin resultados para esa búsqueda.' : 'Aún no hay participantes.'}
+          </p>
+          {!search && <button className="btn btn-primary" onClick={openCreate}><Plus size={13} /> Agregar primero</button>}
+        </div>
+      ) : (
+        <>
+          <table className="data-table">
             <thead>
-              <tr className="border-b border-gray-100 bg-gray-50">
-                <th className="text-left px-4 py-2.5 font-medium text-gray-500 w-10">#</th>
-                <th className="text-left px-4 py-2.5 font-medium text-gray-500">Nombre completo</th>
-                <th className="text-left px-4 py-2.5 font-medium text-gray-500">Rol</th>
-                <th className="text-left px-4 py-2.5 font-medium text-gray-500">Escuela</th>
-                <th className="w-10" />
+              <tr>
+                <th style={{ width: 36 }}>#</th>
+                <th>Nombre completo</th>
+                <th>Rol</th>
+                <th>Escuela</th>
+                <th style={{ width: 36 }} />
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody>
               {participants.map((p, idx) => (
-                <tr
-                  key={p.id}
-                  onClick={() => openView(p)}
-                  className="hover:bg-gray-50 cursor-pointer transition-colors"
-                >
-                  <td className="px-4 py-3 text-gray-400 tabular-nums">
+                <tr key={p.id} onClick={() => openView(p)}>
+                  <td style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--muted-light)' }}>
                     {currentPage * pageSize + idx + 1}
                   </td>
-                  <td className="px-4 py-3 font-medium text-gray-900">
-                    {p.firstName} {p.lastName}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">{PARTICIPANT_ROLE_LABEL[p.role]}</td>
-                  <td className="px-4 py-3 text-gray-600">{SCHOOL_LABEL[p.school]}</td>
-                  <td className="px-4 py-3 relative" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      onClick={() => setOpenMenuId((id) => (id === p.id ? null : p.id))}
-                      className="p-1 rounded text-gray-300 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-                    >
-                      <MoreVertical size={14} />
+                  <td style={{ fontWeight: 600 }}>{p.firstName} {p.lastName}</td>
+                  <td>{PARTICIPANT_ROLE_LABELS[p.role]}</td>
+                  <td>{SCHOOL_LABELS[p.school]}</td>
+                  <td style={{ position: 'relative' }} onClick={(e) => e.stopPropagation()}>
+                    <button className="action-btn" onClick={() => setOpenMenuId((id) => id === p.id ? null : p.id)}>
+                      <MoreVertical size={13} />
                     </button>
                     {openMenuId === p.id && (
                       <>
-                        <div
-                          className="fixed inset-0 z-10"
-                          onClick={() => setOpenMenuId(null)}
-                        />
-                        <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 min-w-[110px] py-1">
-                          <button
-                            onClick={() => openEdit(p)}
-                            className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
-                          >
+                        <div style={{ position: 'fixed', inset: 0, zIndex: 10 }} onClick={() => setOpenMenuId(null)} />
+                        <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, background: 'white', border: '1px solid rgba(0,0,0,0.1)', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.1)', zIndex: 20, minWidth: 110, padding: '4px 0' }}>
+                          <button onClick={() => openEdit(p)} style={{ width: '100%', textAlign: 'left', padding: '7px 12px', fontSize: 12, fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', color: 'var(--ink)' }}
+                            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(0,0,0,0.04)')}
+                            onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}>
                             Editar
                           </button>
-                          <button
-                            onClick={() => {
-                              setOpenMenuId(null)
-                              setEditingParticipant(p)
-                              setShowForm(true)
-                              // Trigger delete confirm via a prop trick — handled inside modal
-                            }}
-                            className="w-full text-left px-3 py-1.5 text-sm text-red-600 hover:bg-red-50"
-                          >
+                          <button onClick={() => { setOpenMenuId(null); setEditingParticipant(p); setShowForm(true) }}
+                            style={{ width: '100%', textAlign: 'left', padding: '7px 12px', fontSize: 12, fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', color: 'var(--red-strong)' }}
+                            onMouseEnter={(e) => (e.currentTarget.style.background = '#FEF2F2')}
+                            onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}>
                             Eliminar
                           </button>
                         </div>
@@ -236,71 +160,39 @@ export default function ParticipantsTab({
               ))}
             </tbody>
           </table>
-        )}
 
-        {/* Pagination footer */}
-        {data && (data.totalPages > 1 || participants.length > 0) && (
-          <div className="flex items-center justify-between px-4 py-2.5 border-t border-gray-100 bg-gray-50">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-400">Filas:</span>
-              <select
-                value={pageSize}
-                onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(0) }}
-                className="text-xs border border-gray-200 rounded px-1.5 py-0.5 bg-white text-gray-600 focus:outline-none"
-              >
-                {PAGE_SIZE_OPTIONS.map((n) => (
-                  <option key={n} value={n}>{n}</option>
-                ))}
-              </select>
-              {data.totalElements > 0 && (
-                <span className="text-xs text-gray-400">
-                  {data.totalElements} participante{data.totalElements !== 1 ? 's' : ''}
-                </span>
-              )}
+          {data && (data.totalPages > 1 || participants.length > 0) && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 11, color: 'var(--muted)' }}>Filas:</span>
+                <select className="form-select" style={{ width: 'auto', padding: '3px 6px', fontSize: 12 }}
+                  value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(0) }}>
+                  {PAGE_SIZE_OPTIONS.map((n) => <option key={n} value={n}>{n}</option>)}
+                </select>
+                {data.totalElements > 0 && (
+                  <span className="pagination-info">{data.totalElements} participante{data.totalElements !== 1 ? 's' : ''}</span>
+                )}
+              </div>
+              <div className="pagination" style={{ marginTop: 0 }}>
+                <button className="pagination-btn" disabled={data.first} onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}>← Anterior</button>
+                <span className="pagination-info">{data.number + 1} / {data.totalPages}</span>
+                <button className="pagination-btn" disabled={data.last} onClick={() => setCurrentPage((p) => p + 1)}>Siguiente →</button>
+              </div>
             </div>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
-                disabled={data.first}
-                className="p-1 rounded hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <ChevronLeft size={14} />
-              </button>
-              <span className="text-xs text-gray-600 px-1">{data.number + 1}</span>
-              <button
-                onClick={() => setCurrentPage((p) => p + 1)}
-                disabled={data.last}
-                className="p-1 rounded hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <ChevronRight size={14} />
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* View modal */}
-      {viewingParticipant && (
-        <ParticipantViewModal
-          participant={viewingParticipant}
-          requiresShirtNumbers={requiresShirtNumbers}
-          onEdit={() => openEdit(viewingParticipant)}
-          onClose={() => setViewingParticipant(null)}
-        />
+          )}
+        </>
       )}
 
-      {/* Form modal (create or edit) */}
+      {viewingParticipant && (
+        <ParticipantViewModal participant={viewingParticipant} requiresShirtNumbers={requiresShirtNumbers}
+          onEdit={() => openEdit(viewingParticipant)} onClose={() => setViewingParticipant(null)} />
+      )}
+
       {showForm && (
-        <ParticipantFormModal
-          competitionId={competitionId}
-          participant={editingParticipant ?? undefined}
-          requiresShirtNumbers={requiresShirtNumbers}
-          requiresMedicalCertificates={requiresMedicalCertificates}
-          localParticipants={participants}
-          onSaved={handleSaved}
-          onDeleted={handleDeleted}
-          onClose={() => { setShowForm(false); setEditingParticipant(undefined) }}
-        />
+        <ParticipantFormModal competitionId={competitionId} participant={editingParticipant ?? undefined}
+          requiresShirtNumbers={requiresShirtNumbers} requiresMedicalCertificates={requiresMedicalCertificates}
+          localParticipants={participants} onSaved={handleSaved} onDeleted={handleDeleted}
+          onClose={() => { setShowForm(false); setEditingParticipant(undefined) }} />
       )}
     </div>
   )
