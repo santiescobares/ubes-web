@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -20,54 +21,59 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 @RestController
-@RequestMapping(Global.BASE_URL + "/competitions/participants")
+@RequestMapping(Global.BASE_URL + "/competitions/{competitionId}/participants")
 @RequiredArgsConstructor
 public class ParticipantController {
 
     private final ParticipantService participantService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION', 'DELEGATE')")
-    public ResponseEntity<Void> add(
-            @RequestParam Long competitionId,
+    @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION')")
+    public ResponseEntity<ParticipantDTO> add(
+            @PathVariable Long competitionId,
+            @RequestPart("body") @Valid ParticipantCreateDTO dto,
+            @RequestPart(value = "studentCertificateFile", required = false) MultipartFile studentCertificateFile,
+            @RequestPart(value = "medicalCertificateFile", required = false) MultipartFile medicalCertificateFile
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(participantService.addParticipant(competitionId, dto, studentCertificateFile, medicalCertificateFile));
+    }
+
+    @PostMapping(path = "/bulk", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyAuthority('DELEGATE', 'EXECUTIVE', 'COMPETITION')")
+    public ResponseEntity<Void> addBulk(
+            @PathVariable Long competitionId,
             @RequestPart("participants") List<@Valid ParticipantCreateDTO> participants,
             @RequestPart(value = "studentCertificateFiles", required = false) List<MultipartFile> studentCertificateFiles,
             @RequestPart(value = "medicalCertificateFiles", required = false) List<MultipartFile> medicalCertificateFiles
     ) {
         participantService.addParticipants(competitionId, participants, studentCertificateFiles, medicalCertificateFiles);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @PutMapping(path = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PutMapping(path = "/{participantId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION')")
     public ResponseEntity<ParticipantDTO> update(
-            @PathVariable Long id,
+            @PathVariable Long competitionId,
+            @PathVariable Long participantId,
             @RequestPart("body") @Valid ParticipantUpdateDTO dto,
             @RequestPart(value = "studentCertificateFile", required = false) MultipartFile studentCertificateFile,
-            @RequestParam(required = false) Boolean removeStudentCertificate,
-            @RequestPart(value = "medicalCertificateFile", required = false) MultipartFile medicalCertificateFile,
-            @RequestParam(required = false) Boolean removeMedicalCertificate
+            @RequestPart(value = "medicalCertificateFile", required = false) MultipartFile medicalCertificateFile
     ) {
         return ResponseEntity.ok(participantService.updateParticipant(
-                id,
-                dto,
-                studentCertificateFile,
-                removeStudentCertificate,
-                medicalCertificateFile,
-                removeMedicalCertificate
-        ));
+                competitionId, participantId, dto, studentCertificateFile, medicalCertificateFile));
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{participantId}")
     @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION')")
-    public ResponseEntity<Void> remove(@PathVariable Long id) {
-        participantService.removeParticipant(id);
+    public ResponseEntity<Void> remove(@PathVariable Long competitionId, @PathVariable Long participantId) {
+        participantService.removeParticipant(competitionId, participantId);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping
     public ResponseEntity<Page<ParticipantDTO>> getAll(
-            @RequestParam Long competitionId,
+            @PathVariable Long competitionId,
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         return ResponseEntity.ok(participantService.getParticipantDTOs(competitionId, pageable));

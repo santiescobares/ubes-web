@@ -124,6 +124,10 @@ public class CompetitionService {
     ) {
         Competition competition = getById(id);
 
+        if (competition.getStatus() != CompetitionStatus.SCHEDULED || competition.getRegistrationStatus() == RegistrationStatus.AVAILABLE) {
+            throw new InvalidOperationException("Competition cannot be updated in current state");
+        }
+
         LocalDateTime finalStartingDate = dto.startingDate() != null ? dto.startingDate() : competition.getStartingDate();
         LocalDateTime finalEndingDate = dto.endingDate() != null ? dto.endingDate() : competition.getEndingDate();
 

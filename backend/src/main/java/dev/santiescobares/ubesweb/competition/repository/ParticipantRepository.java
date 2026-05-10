@@ -1,11 +1,16 @@
 package dev.santiescobares.ubesweb.competition.repository;
 
 import dev.santiescobares.ubesweb.competition.entity.Participant;
+import dev.santiescobares.ubesweb.enums.IdType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ParticipantRepository extends JpaRepository<Participant, Long> {
 
-    Page<Participant> findAllByCompetitionId(Long competitonId, Pageable pageable);
+    Page<Participant> findAllByCompetitionId(Long competitionId, Pageable pageable);
+
+    boolean existsByCompetitionIdAndIdTypeAndIdNumber(Long competitionId, IdType idType, String idNumber);
+
+    boolean existsByCompetitionIdAndIdTypeAndIdNumberAndIdNot(Long competitionId, IdType idType, String idNumber, Long id);
 }
