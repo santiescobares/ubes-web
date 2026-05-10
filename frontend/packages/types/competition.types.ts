@@ -28,7 +28,7 @@ export interface CompetitionCreateDTO {
   description: string
   startingDate: string
   endingDate?: string
-  location: LocationDTO
+  location: LocationDTO | null
   minParticipants: number
   maxParticipants: number
   requiresShirtNumbers: boolean
@@ -65,6 +65,8 @@ export interface ParticipantDTO {
   idNumber: string
   school: School
   shirtNumber: number
+  studentCertificateURL: string | null
+  medicalCertificateURL: string | null
 }
 
 export interface ParticipantCreateDTO {
@@ -75,11 +77,17 @@ export interface ParticipantCreateDTO {
   idNumber: string
   school: School
   shirtNumber?: number
-  competitionId: string
+  studentCertificateFileRef?: string
+  medicalCertificateFileRef?: string
 }
 
 export interface ParticipantUpdateDTO {
   role?: ParticipantRole
+  firstName?: string
+  lastName?: string
+  idType?: IdType
+  idNumber?: string
+  school?: School
   shirtNumber?: number
 }
 
@@ -88,16 +96,18 @@ export interface ResultDTO {
   positionNumber: number
   name: string
   points: number
-  participant: ParticipantSnapshotDTO
+  participant: ParticipantSnapshotDTO | null
 }
 
 export interface ResultCreateDTO {
   positionType: ParticipantPositionType
   positionNumber: number
-  participantId: string
-  points: number
+  name: string
+  participantId?: string
 }
 
 export interface ResultUpdateDTO {
-  points?: number
+  name?: string
+  participantId?: string
+  removeParticipant?: boolean
 }

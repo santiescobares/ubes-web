@@ -2,7 +2,8 @@ import type { EventType } from './enums'
 
 export interface LocationDTO {
   name: string
-  address: string | null
+  latitude: number | null
+  longitude: number | null
 }
 
 export interface EventDTO {
