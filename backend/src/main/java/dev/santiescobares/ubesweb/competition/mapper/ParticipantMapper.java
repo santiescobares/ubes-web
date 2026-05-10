@@ -24,5 +24,7 @@ public interface ParticipantMapper {
     @Mapping(source = "medicalCertificateKey", target = "medicalCertificateURL", qualifiedByName = "r2KeyToR2PresignedURL")
     ParticipantDTO toDTO(Participant participant);
 
+    @Mapping(target = "studentCertificateKey", ignore = true)
+    @Mapping(target = "medicalCertificateKey", ignore = true)
     void updateFromDTO(@MappingTarget Participant participant, ParticipantUpdateDTO dto);
 }

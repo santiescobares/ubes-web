@@ -18,17 +18,22 @@ import java.util.List;
 )
 public interface ResultMapper {
 
-    @Mapping(source = "positionType", target = "id.positionType")
-    @Mapping(source = "positionNumber", target = "id.positionNumber")
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "competition", ignore = true)
+    @Mapping(target = "positionNumber", ignore = true)
+    @Mapping(target = "points", ignore = true)
+    @Mapping(target = "participant", ignore = true)
     Result toEntity(ResultCreateDTO dto);
 
-    @Mapping(source = "id.positionType", target = "positionType")
-    @Mapping(source = "id.positionNumber", target = "positionNumber")
     ResultDTO toDTO(Result result);
 
-    @Mapping(source = "id.positionType", target = "positionType")
-    @Mapping(source = "id.positionNumber", target = "positionNumber")
     List<ResultDTO> toDTOList(List<Result> results);
 
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "competition", ignore = true)
+    @Mapping(target = "positionType", ignore = true)
+    @Mapping(target = "positionNumber", ignore = true)
+    @Mapping(target = "points", ignore = true)
+    @Mapping(target = "participant", ignore = true)
     void updateFromDTO(@MappingTarget Result result, ResultUpdateDTO dto);
 }

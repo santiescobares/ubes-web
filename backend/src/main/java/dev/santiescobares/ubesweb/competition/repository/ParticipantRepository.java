@@ -1,6 +1,7 @@
 package dev.santiescobares.ubesweb.competition.repository;
 
 import dev.santiescobares.ubesweb.competition.entity.Participant;
+import dev.santiescobares.ubesweb.enums.IdType;
 import dev.santiescobares.ubesweb.enums.School;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -10,7 +11,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface ParticipantRepository extends JpaRepository<Participant, Long> {
 
-    Page<Participant> findAllByCompetitionId(Long competitonId, Pageable pageable);
+    Page<Participant> findAllByCompetitionId(Long competitionId, Pageable pageable);
 
     @Query("""
             SELECT p FROM Participant p
@@ -24,6 +25,10 @@ public interface ParticipantRepository extends JpaRepository<Participant, Long> 
             @Param("search") String search,
             Pageable pageable
     );
+
+    boolean existsByCompetitionIdAndIdTypeAndIdNumber(Long competitionId, IdType idType, String idNumber);
+
+    boolean existsByCompetitionIdAndIdTypeAndIdNumberAndIdNot(Long competitionId, IdType idType, String idNumber, Long id);
 
     boolean existsByCompetitionIdAndSchoolAndShirtNumber(Long competitionId, School school, Integer shirtNumber);
 

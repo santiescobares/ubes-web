@@ -5,8 +5,8 @@ import PanelLayout from '@/components/layout/PanelLayout'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
 import LoginPage from '@/pages/LoginPage'
 import DashboardPage from '@/pages/DashboardPage'
-import CompetenciasPage from '@/pages/CompetenciasPage'
-import CompetitionDetailPage from '@/pages/CompetitionDetailPage'
+import CompetitionsListPage from '@/pages/competitions/CompetitionsListPage'
+import CompetitionDetailPage from '@/pages/competitions/CompetitionDetailPage'
 import EventosPage from '@/pages/EventosPage'
 import AnunciosPage from '@/pages/AnunciosPage'
 import DocumentosPage from '@/pages/DocumentosPage'
@@ -26,7 +26,7 @@ function AppInit() {
       <Route element={<ProtectedRoute />}>
         <Route path="/panel" element={<PanelLayout />}>
           <Route index element={<DashboardPage />} />
-          <Route path="competencias" element={<CompetenciasPage />} />
+          <Route path="competencias" element={<CompetitionsListPage />} />
           <Route path="competencias/:id" element={<CompetitionDetailPage />} />
           <Route path="eventos" element={<EventosPage />} />
           <Route path="anuncios" element={<AnunciosPage />} />

@@ -16,13 +16,10 @@ import dev.santiescobares.ubesweb.competition.repository.ParticipantRepository;
 import dev.santiescobares.ubesweb.config.S3Config;
 import dev.santiescobares.ubesweb.context.RequestContextHolder;
 import dev.santiescobares.ubesweb.enums.ResourceType;
-import dev.santiescobares.ubesweb.enums.RoleAuthority;
-import dev.santiescobares.ubesweb.enums.School;
 import dev.santiescobares.ubesweb.exception.type.InvalidOperationException;
+import dev.santiescobares.ubesweb.exception.type.ResourceAlreadyExistsException;
 import dev.santiescobares.ubesweb.exception.type.ResourceNotFoundException;
 import dev.santiescobares.ubesweb.service.StorageService;
-import dev.santiescobares.ubesweb.user.User;
-import dev.santiescobares.ubesweb.user.UserService;
 import dev.santiescobares.ubesweb.util.FileUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -33,8 +30,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -46,11 +41,10 @@ import static dev.santiescobares.ubesweb.Global.*;
 @RequiredArgsConstructor
 public class ParticipantService {
 
-    private final static Set<String> CERTIFICATE_FORMATS = Set.of("pdf", "png", "jpg", "jpeg");
-    private final static long MAX_CERTIFICATE_FILE_SIZE = 5_242_880;
+    private static final Set<String> CERTIFICATE_FORMATS = Set.of("pdf", "png", "jpg", "jpeg");
+    private static final long MAX_CERTIFICATE_FILE_SIZE = 5_242_880;
 
     private final CompetitionService competitionService;
-    private final UserService userService;
     private final StorageService storageService;
 
     private final ParticipantRepository participantRepository;
@@ -63,87 +57,86 @@ public class ParticipantService {
     private final S3Config s3Config;
 
     @Transactional
+    public ParticipantDTO addParticipant(
+            Long competitionId,
+            ParticipantCreateDTO dto,
+            MultipartFile studentCertificateFile,
+            MultipartFile medicalCertificateFile
+    ) {
+        Competition competition = competitionService.getById(competitionId);
+
+        validateNoDuplicateDocument(competitionId, dto);
+        validateMaxCoaches(competition, dto);
+
+        Participant participant = participantMapper.toEntity(dto);
+        participant.setSchool(dto.school());
+
+        String studentKey = uploadCertificate(studentCertificateFile, R2_STUDENT_CERTIFICATES_PATH);
+        if (studentKey != null) participant.setStudentCertificateKey(studentKey);
+
+        if (competition.isRequiresMedicalCertificates()) {
+            String medicalKey = uploadCertificate(medicalCertificateFile, R2_MEDICAL_CERTIFICATES_PATH);
+            if (medicalKey != null) participant.setMedicalCertificateKey(medicalKey);
+        }
+
+        competition.addParticipant(participant);
+        competitionRepository.save(competition);
+
+        eventPublisher.publishEvent(new CompetitionAddParticipantsEvent(
+                RequestContextHolder.getCurrentSession().userId(),
+                competition,
+                List.of(participant)
+        ));
+
+        return participantMapper.toDTO(participant);
+    }
+
+    @Transactional
     public void addParticipants(
             Long competitionId,
-            List<ParticipantCreateDTO> participants,
+            List<ParticipantCreateDTO> dtos,
             List<MultipartFile> studentCertificateFiles,
             List<MultipartFile> medicalCertificateFiles
     ) {
         Competition competition = competitionService.getById(competitionId);
 
-        User currentUser = userService.getCurrentUser();
-        RoleAuthority roleAuthority = currentUser.getRole().getAuthority();
-        boolean isAuthority = roleAuthority == RoleAuthority.COMPETITION || roleAuthority == RoleAuthority.EXECUTIVE;
-
-        if (competition.getRegistrationStatus() != RegistrationStatus.AVAILABLE && !isAuthority) {
+        if (competition.getRegistrationStatus() != RegistrationStatus.AVAILABLE) {
             throw new InvalidOperationException("Competition is not under registration stage");
         }
 
-        // We map certificate files to their reference name set in DTO, this will help us to access them faster
-        Map<String, MultipartFile> studentCertificatesMap = studentCertificateFiles == null ? Map.of() :
-                studentCertificateFiles.stream()
-                .filter(f -> f.getOriginalFilename() != null && !f.isEmpty())
-                .collect(Collectors.toMap(MultipartFile::getOriginalFilename, f -> f));
-        Map<String, MultipartFile> medicalCertificatesMap = medicalCertificateFiles == null ? Map.of() :
-                medicalCertificateFiles.stream()
-                .filter(f -> f.getOriginalFilename() != null && !f.isEmpty())
-                .collect(Collectors.toMap(MultipartFile::getOriginalFilename, f -> f));
+        Map<String, MultipartFile> studentCertificatesMap = filesToMap(studentCertificateFiles);
+        Map<String, MultipartFile> medicalCertificatesMap = filesToMap(medicalCertificateFiles);
 
         List<MultipartFile> studentFilesBatch = new ArrayList<>(), medicalFilesBatch = new ArrayList<>();
         List<String> studentKeys = new ArrayList<>(), medicalKeys = new ArrayList<>();
 
-        // Validate shirt number uniqueness: detect intra-batch duplicates and conflicts with existing DB records
-        Map<School, Set<Integer>> batchShirtNumbers = new HashMap<>();
-        for (ParticipantCreateDTO participantDTO : participants) {
-            if (participantDTO.role() != ParticipantRole.COACH && participantDTO.shirtNumber() != null) {
-                School school = isAuthority ? participantDTO.school() : currentUser.getSchool();
-                Set<Integer> schoolNumbers = batchShirtNumbers.computeIfAbsent(school, k -> new HashSet<>());
-                if (!schoolNumbers.add(participantDTO.shirtNumber())) {
-                    throw new InvalidOperationException(
-                            "El número de camiseta " + participantDTO.shirtNumber() +
-                            " aparece duplicado en el lote para la escuela " + school);
-                }
-                if (participantRepository.existsByCompetitionIdAndSchoolAndShirtNumber(
-                        competitionId, school, participantDTO.shirtNumber())) {
-                    throw new InvalidOperationException(
-                            "El número de camiseta " + participantDTO.shirtNumber() +
-                            " ya está en uso en esta competencia para la escuela " + school);
+        for (ParticipantCreateDTO dto : dtos) {
+            validateNoDuplicateDocument(competitionId, dto);
+            validateMaxCoaches(competition, dto);
+
+            Participant participant = participantMapper.toEntity(dto);
+            participant.setSchool(dto.school());
+
+            if (dto.studentCertificateFileRef() != null) {
+                MultipartFile file = studentCertificatesMap.get(dto.studentCertificateFileRef());
+                if (file != null) {
+                    FileUtil.validateExtension(file, CERTIFICATE_FORMATS);
+                    FileUtil.validateSize(file, MAX_CERTIFICATE_FILE_SIZE);
+                    String key = StorageService.fileName(file, R2_STUDENT_CERTIFICATES_PATH);
+                    participant.setStudentCertificateKey(key);
+                    studentKeys.add(key);
+                    studentFilesBatch.add(file);
                 }
             }
-        }
-
-        for (ParticipantCreateDTO participantDTO : participants) {
-            Participant participant = participantMapper.toEntity(participantDTO);
-            participant.setSchool(isAuthority ? participantDTO.school() : currentUser.getSchool());
-
-            if (participantDTO.role() != ParticipantRole.COACH) {
-                if (participantDTO.studentCertificateFileRef() != null) {
-                    MultipartFile file = studentCertificatesMap.get(participantDTO.studentCertificateFileRef());
-
-                    if (file != null) {
-                        FileUtil.validateExtension(file, CERTIFICATE_FORMATS);
-                        FileUtil.validateSize(file, MAX_CERTIFICATE_FILE_SIZE);
-
-                        String key = StorageService.fileName(file, R2_STUDENT_CERTIFICATES_PATH);
-                        participant.setStudentCertificateKey(key);
-
-                        studentKeys.add(key);
-                        studentFilesBatch.add(file);
-                    }
-                }
-                if (competition.isRequiresMedicalCertificates() && participantDTO.medicalCertificateFileRef() != null) {
-                    MultipartFile file = medicalCertificatesMap.get(participantDTO.medicalCertificateFileRef());
-
-                    if (file != null) {
-                        FileUtil.validateExtension(file, CERTIFICATE_FORMATS);
-                        FileUtil.validateSize(file, MAX_CERTIFICATE_FILE_SIZE);
-
-                        String key = StorageService.fileName(file, R2_MEDICAL_CERTIFICATES_PATH);
-                        participant.setMedicalCertificateKey(key);
-
-                        medicalKeys.add(key);
-                        medicalFilesBatch.add(file);
-                    }
+            if (competition.isRequiresMedicalCertificates() && dto.medicalCertificateFileRef() != null) {
+                MultipartFile file = medicalCertificatesMap.get(dto.medicalCertificateFileRef());
+                if (file != null) {
+                    FileUtil.validateExtension(file, CERTIFICATE_FORMATS);
+                    FileUtil.validateSize(file, MAX_CERTIFICATE_FILE_SIZE);
+                    String key = StorageService.fileName(file, R2_MEDICAL_CERTIFICATES_PATH);
+                    participant.setMedicalCertificateKey(key);
+                    medicalKeys.add(key);
+                    medicalFilesBatch.add(file);
                 }
             }
 
@@ -157,9 +150,6 @@ public class ParticipantService {
             storageService.uploadFilesInParallel(medicalFilesBatch, s3Config.getPrivateBucket(), medicalKeys);
         }
 
-        // Take into account that this method is annotated with @Transactional, that means if entity saving fails, it will get
-        // automatically roll-backed, but there's a little problem... files are uploaded to R2 asynchronously! We won't dive deeper
-        // into this right now because that'd be a pretty uncommon issue, but could be important to know for future scalability
         competitionRepository.save(competition);
 
         eventPublisher.publishEvent(new CompetitionAddParticipantsEvent(
@@ -170,58 +160,40 @@ public class ParticipantService {
     }
 
     public ParticipantDTO updateParticipant(
-            Long id,
+            Long competitionId,
+            Long participantId,
             ParticipantUpdateDTO dto,
             MultipartFile newStudentCertificateFile,
-            Boolean removeStudentCertificate,
-            MultipartFile newMedicalCertificateFile,
-            Boolean removeMedicalCertificate
+            MultipartFile newMedicalCertificateFile
     ) {
-        Participant participant = getById(id);
+        Participant participant = getById(participantId);
         Competition competition = participant.getCompetition();
 
-        Integer originalShirtNumber = participant.getShirtNumber();
-        participantMapper.updateFromDTO(participant, dto);
+        if (!competition.getId().equals(competitionId)) {
+            throw new InvalidOperationException("Participant does not belong to the specified competition");
+        }
 
-        if (participant.getRole() == ParticipantRole.COACH) {
-            participant.setShirtNumber(null);
-            participant.setStudentCertificateKey(null);
-            participant.setMedicalCertificateKey(null);
-        } else {
-            if (removeStudentCertificate != null && removeStudentCertificate) {
-                participant.setStudentCertificateKey(null);
-            } else {
-                if (newStudentCertificateFile != null && !newStudentCertificateFile.isEmpty()) {
-                    FileUtil.validateExtension(newStudentCertificateFile, CERTIFICATE_FORMATS);
-                    FileUtil.validateSize(newStudentCertificateFile, MAX_CERTIFICATE_FILE_SIZE);
-
-                    String key = StorageService.fileName(newStudentCertificateFile, R2_STUDENT_CERTIFICATES_PATH);
-                    participant.setStudentCertificateKey(key);
-                    storageService.uploadFile(newStudentCertificateFile, s3Config.getPrivateBucket(), key);
-                }
-            }
-
-            if (removeMedicalCertificate != null && removeMedicalCertificate) {
-                participant.setMedicalCertificateKey(null);
-            } else {
-                if (competition.isRequiresMedicalCertificates() && newMedicalCertificateFile != null && !newMedicalCertificateFile.isEmpty()) {
-                    FileUtil.validateExtension(newMedicalCertificateFile, CERTIFICATE_FORMATS);
-                    FileUtil.validateSize(newMedicalCertificateFile, MAX_CERTIFICATE_FILE_SIZE);
-
-                    String key = StorageService.fileName(newMedicalCertificateFile, R2_MEDICAL_CERTIFICATES_PATH);
-                    participant.setMedicalCertificateKey(key);
-                    storageService.uploadFile(newMedicalCertificateFile, s3Config.getPrivateBucket(), key);
-                }
+        if (dto.idType() != null && dto.idNumber() != null) {
+            if (participantRepository.existsByCompetitionIdAndIdTypeAndIdNumberAndIdNot(
+                    competitionId, dto.idType(), dto.idNumber(), participantId)) {
+                throw new ResourceAlreadyExistsException(ResourceType.COMPETITION_PARTICIPANT);
             }
         }
 
-        if (participant.getRole() != ParticipantRole.COACH && dto.shirtNumber() != null && !dto.shirtNumber().equals(originalShirtNumber)) {
-            if (participantRepository.existsByCompetitionIdAndSchoolAndShirtNumberAndIdNot(
-                    competition.getId(), participant.getSchool(), dto.shirtNumber(), participant.getId())) {
-                throw new InvalidOperationException(
-                        "El número de camiseta " + dto.shirtNumber() +
-                        " ya está en uso en esta competencia para la escuela " + participant.getSchool());
-            }
+        participantMapper.updateFromDTO(participant, dto);
+
+        if (Boolean.TRUE.equals(dto.removeStudentCertificate())) {
+            participant.setStudentCertificateKey(null);
+        } else {
+            String key = uploadCertificate(newStudentCertificateFile, R2_STUDENT_CERTIFICATES_PATH);
+            if (key != null) participant.setStudentCertificateKey(key);
+        }
+
+        if (Boolean.TRUE.equals(dto.removeMedicalCertificate())) {
+            participant.setMedicalCertificateKey(null);
+        } else if (competition.isRequiresMedicalCertificates()) {
+            String key = uploadCertificate(newMedicalCertificateFile, R2_MEDICAL_CERTIFICATES_PATH);
+            if (key != null) participant.setMedicalCertificateKey(key);
         }
 
         participantRepository.save(participant);
@@ -236,9 +208,13 @@ public class ParticipantService {
     }
 
     @Transactional
-    public void removeParticipant(Long id) {
-        Participant participant = getById(id);
+    public void removeParticipant(Long competitionId, Long participantId) {
+        Participant participant = getById(participantId);
         Competition competition = participant.getCompetition();
+
+        if (!competition.getId().equals(competitionId)) {
+            throw new InvalidOperationException("Participant does not belong to the specified competition");
+        }
 
         competition.removeParticipant(participant);
 
@@ -250,12 +226,47 @@ public class ParticipantService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ParticipantDTO> getParticipantDTOs(Long competitionId, String search, Pageable pageable) {
-        return participantRepository.findAllByCompetitionIdWithSearch(competitionId, search, pageable)
+    public Page<ParticipantDTO> getParticipantDTOs(Long competitionId, Pageable pageable) {
+        return participantRepository.findAllByCompetitionId(competitionId, pageable)
                 .map(participantMapper::toDTO);
     }
 
     public Participant getById(Long id) {
-        return participantRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException(ResourceType.COMPETITION_PARTICIPANT));
+        return participantRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(ResourceType.COMPETITION_PARTICIPANT));
+    }
+
+    private void validateNoDuplicateDocument(Long competitionId, ParticipantCreateDTO dto) {
+        if (participantRepository.existsByCompetitionIdAndIdTypeAndIdNumber(
+                competitionId, dto.idType(), dto.idNumber())) {
+            throw new ResourceAlreadyExistsException(ResourceType.COMPETITION_PARTICIPANT);
+        }
+    }
+
+    private void validateMaxCoaches(Competition competition, ParticipantCreateDTO dto) {
+        if (dto.role() == ParticipantRole.COACH) {
+            long currentCoaches = competition.getParticipants().stream()
+                    .filter(p -> p.getRole() == ParticipantRole.COACH && p.getSchool() == dto.school())
+                    .count();
+            if (currentCoaches >= competition.getMaxCoaches()) {
+                throw new InvalidOperationException("Max coaches limit reached for school " + dto.school());
+            }
+        }
+    }
+
+    private String uploadCertificate(MultipartFile file, String path) {
+        if (file == null || file.isEmpty()) return null;
+        FileUtil.validateExtension(file, CERTIFICATE_FORMATS);
+        FileUtil.validateSize(file, MAX_CERTIFICATE_FILE_SIZE);
+        String key = StorageService.fileName(file, path);
+        storageService.uploadFile(file, s3Config.getPrivateBucket(), key);
+        return key;
+    }
+
+    private Map<String, MultipartFile> filesToMap(List<MultipartFile> files) {
+        if (files == null) return Map.of();
+        return files.stream()
+                .filter(f -> f.getOriginalFilename() != null && !f.isEmpty())
+                .collect(Collectors.toMap(MultipartFile::getOriginalFilename, f -> f));
     }
 }

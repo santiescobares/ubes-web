@@ -1,16 +1,13 @@
 import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
-import Topbar from './Topbar'
 
 export default function PanelLayout() {
   return (
-    <div className="panel-shell">
-      <div className="grid-bg" />
+    <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
-      <div className="panel-main">
-        <Topbar />
+      <main className="flex-1 min-w-0 overflow-auto">
         <Outlet />
-      </div>
+      </main>
     </div>
   )
 }

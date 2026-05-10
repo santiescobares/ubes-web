@@ -3,9 +3,9 @@ package dev.santiescobares.ubesweb.competition.controller;
 import dev.santiescobares.ubesweb.Global;
 import dev.santiescobares.ubesweb.competition.dto.result.ResultCreateDTO;
 import dev.santiescobares.ubesweb.competition.dto.result.ResultDTO;
+import dev.santiescobares.ubesweb.competition.dto.result.ResultReorderDTO;
 import dev.santiescobares.ubesweb.competition.dto.result.ResultUpdateDTO;
 import dev.santiescobares.ubesweb.competition.enums.ParticipantPositionType;
-import dev.santiescobares.ubesweb.competition.id.ResultId;
 import dev.santiescobares.ubesweb.competition.service.ResultService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -17,33 +17,59 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping(Global.BASE_URL + "/competitions/results")
+@RequestMapping(Global.BASE_URL + "/competitions/{competitionId}/results")
 @RequiredArgsConstructor
 public class ResultController {
 
     private final ResultService resultService;
 
-    @PostMapping("/{competitionId}")
-    @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION')")
-    public ResponseEntity<Void> create(@PathVariable Long competitionId, @RequestBody List<@Valid ResultCreateDTO> results) {
-        resultService.calculateResults(competitionId, results);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
-    }
-
-    @PutMapping("/{competitionId}/{positionType}/{positionNumber}")
-    @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION')")
-    public ResponseEntity<Void> update(
-            @PathVariable Long competitionId,
-            @PathVariable ParticipantPositionType positionType,
-            @PathVariable Integer positionNumber,
-            @RequestBody @Valid ResultUpdateDTO dto
-    ) {
-        resultService.updateResult(new ResultId(competitionId, positionType, positionNumber), dto);
-        return ResponseEntity.ok().build();
-    }
-
-    @GetMapping("/{competitionId}")
+    @GetMapping
     public ResponseEntity<List<ResultDTO>> getAll(@PathVariable Long competitionId) {
         return ResponseEntity.ok(resultService.findResultDTOs(competitionId));
+    }
+
+    @GetMapping("/{positionType}")
+    public ResponseEntity<List<ResultDTO>> getByType(
+            @PathVariable Long competitionId,
+            @PathVariable ParticipantPositionType positionType
+    ) {
+        return ResponseEntity.ok(resultService.findResultDTOsByType(competitionId, positionType));
+    }
+
+    @PostMapping
+    @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION')")
+    public ResponseEntity<ResultDTO> create(
+            @PathVariable Long competitionId,
+            @RequestBody @Valid ResultCreateDTO dto
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(resultService.addResult(competitionId, dto));
+    }
+
+    @PutMapping("/{resultId}")
+    @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION')")
+    public ResponseEntity<ResultDTO> update(
+            @PathVariable Long competitionId,
+            @PathVariable Long resultId,
+            @RequestBody @Valid ResultUpdateDTO dto
+    ) {
+        return ResponseEntity.ok(resultService.updateResult(resultId, dto));
+    }
+
+    @DeleteMapping("/{resultId}")
+    @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION')")
+    public ResponseEntity<Void> delete(@PathVariable Long competitionId, @PathVariable Long resultId) {
+        resultService.deleteResult(resultId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{positionType}/reorder")
+    @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION')")
+    public ResponseEntity<Void> reorder(
+            @PathVariable Long competitionId,
+            @PathVariable ParticipantPositionType positionType,
+            @RequestBody @Valid ResultReorderDTO dto
+    ) {
+        resultService.reorderResults(competitionId, positionType, dto);
+        return ResponseEntity.ok().build();
     }
 }

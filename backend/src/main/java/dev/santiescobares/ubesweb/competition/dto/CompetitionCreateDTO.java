@@ -24,6 +24,9 @@ public record CompetitionCreateDTO(
         int minParticipants,
         @Positive(message = "Maximum participants per school must be positive")
         int maxParticipants,
+        @Min(value = 0, message = "Max coaches must be between 0 and 99")
+        @Max(value = 99, message = "Max coaches must be between 0 and 99")
+        int maxCoaches,
         boolean requiresShirtNumbers,
         boolean requiresMedicalCertificates
 ) {

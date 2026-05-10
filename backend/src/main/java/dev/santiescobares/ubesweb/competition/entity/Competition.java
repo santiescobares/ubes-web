@@ -17,7 +17,10 @@ import java.util.List;
 @Entity
 @Table(
         name = "competitions",
-        check = @CheckConstraint(name = "participants_check", constraint = "min_participants > 0 AND max_participants > 1"),
+        check = {
+                @CheckConstraint(name = "participants_check", constraint = "min_participants > 0 AND max_participants > 1"),
+                @CheckConstraint(name = "max_coaches_check", constraint = "max_coaches >= 0 AND max_coaches <= 99")
+        },
         indexes = {
                 @Index(name = "idx_competition_regulation_documents", columnList = "regulation_document_id")
         }
@@ -31,6 +34,8 @@ public class Competition extends Event {
     private Document regulationDocument;
 
     private int minParticipants, maxParticipants;
+    @Column(nullable = false)
+    private int maxCoaches;
     private boolean requiresShirtNumbers, requiresMedicalCertificates;
 
     private LocalDateTime registrationStartingDate, registrationEndingDate;
@@ -92,6 +97,7 @@ public class Competition extends Event {
                 ", endingDate=" + getEndingDate() +
                 ", minParticipants=" + minParticipants +
                 ", maxParticipants=" + maxParticipants +
+                ", maxCoaches=" + maxCoaches +
                 ", requiresShirtNumbers=" + requiresShirtNumbers +
                 ", requiresMedicalCertificates=" + requiresMedicalCertificates +
                 ", registrationStartingDate=" + registrationStartingDate +

@@ -15,6 +15,7 @@ export interface CompetitionDTO {
   regulationDocument: DocumentDTO | null
   minParticipants: number
   maxParticipants: number
+  maxCoaches: number
   requiresShirtNumbers: boolean
   requiresMedicalCertificates: boolean
   registrationStartingDate: string | null
@@ -28,9 +29,10 @@ export interface CompetitionCreateDTO {
   description: string
   startingDate: string
   endingDate?: string
-  location: LocationDTO | null
+  location: LocationDTO
   minParticipants: number
   maxParticipants: number
+  maxCoaches: number
   requiresShirtNumbers: boolean
   requiresMedicalCertificates: boolean
 }
@@ -43,6 +45,7 @@ export interface CompetitionUpdateDTO {
   location?: LocationDTO
   minParticipants?: number
   maxParticipants?: number
+  maxCoaches?: number
   requiresShirtNumbers?: boolean
   requiresMedicalCertificates?: boolean
 }
@@ -89,9 +92,12 @@ export interface ParticipantUpdateDTO {
   idNumber?: string
   school?: School
   shirtNumber?: number
+  removeStudentCertificate?: boolean
+  removeMedicalCertificate?: boolean
 }
 
 export interface ResultDTO {
+  id: string
   positionType: ParticipantPositionType
   positionNumber: number
   name: string
@@ -101,7 +107,6 @@ export interface ResultDTO {
 
 export interface ResultCreateDTO {
   positionType: ParticipantPositionType
-  positionNumber: number
   name: string
   participantId?: string
 }
@@ -110,4 +115,13 @@ export interface ResultUpdateDTO {
   name?: string
   participantId?: string
   removeParticipant?: boolean
+}
+
+export interface ResultOrderEntry {
+  id: string
+  positionNumber: number
+}
+
+export interface ResultReorderDTO {
+  entries: ResultOrderEntry[]
 }

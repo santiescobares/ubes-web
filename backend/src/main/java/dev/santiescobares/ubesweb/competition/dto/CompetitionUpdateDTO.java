@@ -21,6 +21,9 @@ public record CompetitionUpdateDTO(
         Integer minParticipants,
         @Positive(message = "Maximum participants per school must be positive")
         Integer maxParticipants,
+        @Min(value = 0, message = "Max coaches must be between 0 and 99")
+        @Max(value = 99, message = "Max coaches must be between 0 and 99")
+        Integer maxCoaches,
         Boolean requiresShirtNumbers,
         Boolean requiresMedicalCertificates
 ) {
