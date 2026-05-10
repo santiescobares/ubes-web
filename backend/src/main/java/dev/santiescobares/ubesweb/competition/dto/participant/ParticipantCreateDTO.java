@@ -22,7 +22,7 @@ public record ParticipantCreateDTO(
         School school,
         @Min(value = 0, message = "Shirt number must be between 0 and 99")
         @Max(value = 99, message = "Shirt number must be between 0 and 99")
-        int shirtNumber,
+        Integer shirtNumber,
         @Size(max = 255, message = "Student certificate file name is too long")
         String studentCertificateFileRef,
         @Size(max = 255, message = "Medical certificate file name is too long")

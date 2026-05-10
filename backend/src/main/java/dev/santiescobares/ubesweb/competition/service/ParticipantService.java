@@ -5,6 +5,7 @@ import dev.santiescobares.ubesweb.competition.dto.participant.ParticipantDTO;
 import dev.santiescobares.ubesweb.competition.dto.participant.ParticipantUpdateDTO;
 import dev.santiescobares.ubesweb.competition.entity.Competition;
 import dev.santiescobares.ubesweb.competition.entity.Participant;
+import dev.santiescobares.ubesweb.competition.enums.ParticipantRole;
 import dev.santiescobares.ubesweb.competition.enums.RegistrationStatus;
 import dev.santiescobares.ubesweb.competition.event.participant.CompetitionAddParticipantsEvent;
 import dev.santiescobares.ubesweb.competition.event.participant.CompetitionRemoveParticipantEvent;
@@ -16,6 +17,7 @@ import dev.santiescobares.ubesweb.config.S3Config;
 import dev.santiescobares.ubesweb.context.RequestContextHolder;
 import dev.santiescobares.ubesweb.enums.ResourceType;
 import dev.santiescobares.ubesweb.enums.RoleAuthority;
+import dev.santiescobares.ubesweb.enums.School;
 import dev.santiescobares.ubesweb.exception.type.InvalidOperationException;
 import dev.santiescobares.ubesweb.exception.type.ResourceNotFoundException;
 import dev.santiescobares.ubesweb.service.StorageService;
@@ -31,6 +33,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -68,7 +72,8 @@ public class ParticipantService {
         Competition competition = competitionService.getById(competitionId);
 
         User currentUser = userService.getCurrentUser();
-        boolean isAuthority = currentUser.getRole().getAuthority().isAtLeast(RoleAuthority.COMPETITION);
+        RoleAuthority roleAuthority = currentUser.getRole().getAuthority();
+        boolean isAuthority = roleAuthority == RoleAuthority.COMPETITION || roleAuthority == RoleAuthority.EXECUTIVE;
 
         if (competition.getRegistrationStatus() != RegistrationStatus.AVAILABLE && !isAuthority) {
             throw new InvalidOperationException("Competition is not under registration stage");
@@ -87,36 +92,58 @@ public class ParticipantService {
         List<MultipartFile> studentFilesBatch = new ArrayList<>(), medicalFilesBatch = new ArrayList<>();
         List<String> studentKeys = new ArrayList<>(), medicalKeys = new ArrayList<>();
 
+        // Validate shirt number uniqueness: detect intra-batch duplicates and conflicts with existing DB records
+        Map<School, Set<Integer>> batchShirtNumbers = new HashMap<>();
+        for (ParticipantCreateDTO participantDTO : participants) {
+            if (participantDTO.role() != ParticipantRole.COACH && participantDTO.shirtNumber() != null) {
+                School school = isAuthority ? participantDTO.school() : currentUser.getSchool();
+                Set<Integer> schoolNumbers = batchShirtNumbers.computeIfAbsent(school, k -> new HashSet<>());
+                if (!schoolNumbers.add(participantDTO.shirtNumber())) {
+                    throw new InvalidOperationException(
+                            "El número de camiseta " + participantDTO.shirtNumber() +
+                            " aparece duplicado en el lote para la escuela " + school);
+                }
+                if (participantRepository.existsByCompetitionIdAndSchoolAndShirtNumber(
+                        competitionId, school, participantDTO.shirtNumber())) {
+                    throw new InvalidOperationException(
+                            "El número de camiseta " + participantDTO.shirtNumber() +
+                            " ya está en uso en esta competencia para la escuela " + school);
+                }
+            }
+        }
+
         for (ParticipantCreateDTO participantDTO : participants) {
             Participant participant = participantMapper.toEntity(participantDTO);
             participant.setSchool(isAuthority ? participantDTO.school() : currentUser.getSchool());
 
-            if (participantDTO.studentCertificateFileRef() != null) {
-                MultipartFile file = studentCertificatesMap.get(participantDTO.studentCertificateFileRef());
+            if (participantDTO.role() != ParticipantRole.COACH) {
+                if (participantDTO.studentCertificateFileRef() != null) {
+                    MultipartFile file = studentCertificatesMap.get(participantDTO.studentCertificateFileRef());
 
-                if (file != null) {
-                    FileUtil.validateExtension(file, CERTIFICATE_FORMATS);
-                    FileUtil.validateSize(file, MAX_CERTIFICATE_FILE_SIZE);
+                    if (file != null) {
+                        FileUtil.validateExtension(file, CERTIFICATE_FORMATS);
+                        FileUtil.validateSize(file, MAX_CERTIFICATE_FILE_SIZE);
 
-                    String key = StorageService.fileName(file, R2_STUDENT_CERTIFICATES_PATH);
-                    participant.setStudentCertificateKey(key);
+                        String key = StorageService.fileName(file, R2_STUDENT_CERTIFICATES_PATH);
+                        participant.setStudentCertificateKey(key);
 
-                    studentKeys.add(key);
-                    studentFilesBatch.add(file);
+                        studentKeys.add(key);
+                        studentFilesBatch.add(file);
+                    }
                 }
-            }
-            if (competition.isRequiresMedicalCertificates() && participantDTO.medicalCertificateFileRef() != null) {
-                MultipartFile file = medicalCertificatesMap.get(participantDTO.medicalCertificateFileRef());
+                if (competition.isRequiresMedicalCertificates() && participantDTO.medicalCertificateFileRef() != null) {
+                    MultipartFile file = medicalCertificatesMap.get(participantDTO.medicalCertificateFileRef());
 
-                if (file != null) {
-                    FileUtil.validateExtension(file, CERTIFICATE_FORMATS);
-                    FileUtil.validateSize(file, MAX_CERTIFICATE_FILE_SIZE);
+                    if (file != null) {
+                        FileUtil.validateExtension(file, CERTIFICATE_FORMATS);
+                        FileUtil.validateSize(file, MAX_CERTIFICATE_FILE_SIZE);
 
-                    String key = StorageService.fileName(file, R2_MEDICAL_CERTIFICATES_PATH);
-                    participant.setMedicalCertificateKey(key);
+                        String key = StorageService.fileName(file, R2_MEDICAL_CERTIFICATES_PATH);
+                        participant.setMedicalCertificateKey(key);
 
-                    medicalKeys.add(key);
-                    medicalFilesBatch.add(file);
+                        medicalKeys.add(key);
+                        medicalFilesBatch.add(file);
+                    }
                 }
             }
 
@@ -153,29 +180,47 @@ public class ParticipantService {
         Participant participant = getById(id);
         Competition competition = participant.getCompetition();
 
+        Integer originalShirtNumber = participant.getShirtNumber();
         participantMapper.updateFromDTO(participant, dto);
 
-        if (removeStudentCertificate != null && removeStudentCertificate) {
+        if (participant.getRole() == ParticipantRole.COACH) {
+            participant.setShirtNumber(null);
             participant.setStudentCertificateKey(null);
+            participant.setMedicalCertificateKey(null);
         } else {
-            if (newStudentCertificateFile != null && !newStudentCertificateFile.isEmpty()) {
-                FileUtil.validateExtension(newStudentCertificateFile, CERTIFICATE_FORMATS);
-                FileUtil.validateSize(newStudentCertificateFile, MAX_CERTIFICATE_FILE_SIZE);
+            if (removeStudentCertificate != null && removeStudentCertificate) {
+                participant.setStudentCertificateKey(null);
+            } else {
+                if (newStudentCertificateFile != null && !newStudentCertificateFile.isEmpty()) {
+                    FileUtil.validateExtension(newStudentCertificateFile, CERTIFICATE_FORMATS);
+                    FileUtil.validateSize(newStudentCertificateFile, MAX_CERTIFICATE_FILE_SIZE);
 
-                String key = StorageService.fileName(newStudentCertificateFile, R2_STUDENT_CERTIFICATES_PATH);
-                participant.setStudentCertificateKey(key);
+                    String key = StorageService.fileName(newStudentCertificateFile, R2_STUDENT_CERTIFICATES_PATH);
+                    participant.setStudentCertificateKey(key);
+                    storageService.uploadFile(newStudentCertificateFile, s3Config.getPrivateBucket(), key);
+                }
+            }
+
+            if (removeMedicalCertificate != null && removeMedicalCertificate) {
+                participant.setMedicalCertificateKey(null);
+            } else {
+                if (competition.isRequiresMedicalCertificates() && newMedicalCertificateFile != null && !newMedicalCertificateFile.isEmpty()) {
+                    FileUtil.validateExtension(newMedicalCertificateFile, CERTIFICATE_FORMATS);
+                    FileUtil.validateSize(newMedicalCertificateFile, MAX_CERTIFICATE_FILE_SIZE);
+
+                    String key = StorageService.fileName(newMedicalCertificateFile, R2_MEDICAL_CERTIFICATES_PATH);
+                    participant.setMedicalCertificateKey(key);
+                    storageService.uploadFile(newMedicalCertificateFile, s3Config.getPrivateBucket(), key);
+                }
             }
         }
 
-        if (removeMedicalCertificate != null && removeMedicalCertificate) {
-            participant.setMedicalCertificateKey(null);
-        } else {
-            if (competition.isRequiresMedicalCertificates() && newMedicalCertificateFile != null && !newMedicalCertificateFile.isEmpty()) {
-                FileUtil.validateExtension(newMedicalCertificateFile, CERTIFICATE_FORMATS);
-                FileUtil.validateSize(newMedicalCertificateFile, MAX_CERTIFICATE_FILE_SIZE);
-
-                String key = StorageService.fileName(newMedicalCertificateFile, R2_MEDICAL_CERTIFICATES_PATH);
-                participant.setMedicalCertificateKey(key);
+        if (participant.getRole() != ParticipantRole.COACH && dto.shirtNumber() != null && !dto.shirtNumber().equals(originalShirtNumber)) {
+            if (participantRepository.existsByCompetitionIdAndSchoolAndShirtNumberAndIdNot(
+                    competition.getId(), participant.getSchool(), dto.shirtNumber(), participant.getId())) {
+                throw new InvalidOperationException(
+                        "El número de camiseta " + dto.shirtNumber() +
+                        " ya está en uso en esta competencia para la escuela " + participant.getSchool());
             }
         }
 
@@ -205,8 +250,8 @@ public class ParticipantService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ParticipantDTO> getParticipantDTOs(Long competitionId, Pageable pageable) {
-        return participantRepository.findAllByCompetitionId(competitionId, pageable)
+    public Page<ParticipantDTO> getParticipantDTOs(Long competitionId, String search, Pageable pageable) {
+        return participantRepository.findAllByCompetitionIdWithSearch(competitionId, search, pageable)
                 .map(participantMapper::toDTO);
     }
 

@@ -12,6 +12,7 @@ import dev.santiescobares.ubesweb.competition.event.CompetitionUpdateEvent;
 import dev.santiescobares.ubesweb.competition.mapper.CompetitionMapper;
 import dev.santiescobares.ubesweb.competition.repository.CompetitionRepository;
 import dev.santiescobares.ubesweb.config.S3Config;
+import dev.santiescobares.ubesweb.context.RequestContextData;
 import dev.santiescobares.ubesweb.context.RequestContextHolder;
 import dev.santiescobares.ubesweb.document.Document;
 import dev.santiescobares.ubesweb.document.DocumentService;
@@ -61,9 +62,8 @@ public class CompetitionService {
     private final S3Config s3Config;
 
     public CompetitionDTO createCompetition(CompetitionCreateDTO dto, MultipartFile bannerFile, MultipartFile regulationDocumentFile) {
-        if (dto.endingDate().isBefore(dto.startingDate())) {
-            throw new IllegalArgumentException("Invalid competition starting/ending dates");
-        }
+        validateMinDateRange(dto.startingDate(), dto.endingDate());
+
         if (dto.minParticipants() > dto.maxParticipants()) {
             throw new IllegalArgumentException("Invalid competition participant amounts");
         }
@@ -124,11 +124,15 @@ public class CompetitionService {
     ) {
         Competition competition = getById(id);
 
+        if (competition.getStatus() != CompetitionStatus.SCHEDULED || competition.getRegistrationStatus() == RegistrationStatus.AVAILABLE) {
+            throw new InvalidOperationException("Can't modify a competition after initialized or under registration stage");
+        }
+
         LocalDateTime finalStartingDate = dto.startingDate() != null ? dto.startingDate() : competition.getStartingDate();
         LocalDateTime finalEndingDate = dto.endingDate() != null ? dto.endingDate() : competition.getEndingDate();
 
-        if (finalStartingDate != null && finalEndingDate != null && finalEndingDate.isBefore(finalStartingDate)) {
-            throw new IllegalArgumentException("Invalid competition starting/ending dates");
+        if (finalStartingDate != null && finalEndingDate != null) {
+            validateMinDateRange(finalStartingDate, finalEndingDate);
         }
 
         int finalMinParticipants = dto.minParticipants() != null ? dto.minParticipants() : competition.getMinParticipants();
@@ -192,9 +196,7 @@ public class CompetitionService {
             throw new InvalidOperationException("Competition has already started");
         }
 
-        if (endingDate.isBefore(startingDate)) {
-            throw new IllegalArgumentException("Invalid competition registration starting/ending dates");
-        }
+        validateMinDateRange(startingDate, endingDate);
 
         competition.setRegistrationStartingDate(startingDate);
         competition.setRegistrationEndingDate(endingDate);
@@ -215,7 +217,8 @@ public class CompetitionService {
 
         competition.setRegistrationStatus(RegistrationStatus.AVAILABLE);
 
-        log.info("Competition '{}' registration is now available", competition.getId());
+        RequestContextData contextData = RequestContextHolder.getCurrentSession();
+        eventPublisher.publishEvent(new CompetitionUpdateEvent(contextData != null ? contextData.userId() : null, competition));
     }
 
     @Transactional
@@ -226,7 +229,8 @@ public class CompetitionService {
 
         competition.setRegistrationStatus(cancel ? RegistrationStatus.CANCELED : RegistrationStatus.EXPIRED);
 
-        log.info("Competition '{}' registration is no longer available", competition.getId());
+        RequestContextData contextData = RequestContextHolder.getCurrentSession();
+        eventPublisher.publishEvent(new CompetitionUpdateEvent(contextData != null ? contextData.userId() : null, competition));
     }
 
     @Transactional
@@ -248,7 +252,8 @@ public class CompetitionService {
 
         competition.setStatus(CompetitionStatus.ON_GOING);
 
-        eventPublisher.publishEvent(new CompetitionUpdateEvent(RequestContextHolder.getCurrentSession().userId(), competition));
+        RequestContextData contextData = RequestContextHolder.getCurrentSession();
+        eventPublisher.publishEvent(new CompetitionUpdateEvent(contextData != null ? contextData.userId() : null, competition));
     }
 
     @Transactional
@@ -259,7 +264,8 @@ public class CompetitionService {
 
         competition.setStatus(CompetitionStatus.FINISHED);
 
-        eventPublisher.publishEvent(new CompetitionUpdateEvent(RequestContextHolder.getCurrentSession().userId(), competition));
+        RequestContextData contextData = RequestContextHolder.getCurrentSession();
+        eventPublisher.publishEvent(new CompetitionUpdateEvent(contextData != null ? contextData.userId() : null, competition));
     }
 
     @Transactional
@@ -288,6 +294,7 @@ public class CompetitionService {
     @Transactional
     public void deleteCompetition(Long id) {
         Competition competition = getById(id);
+
         if (competition.getStatus() != CompetitionStatus.CANCELED) {
             throw new InvalidOperationException("Can't delete competition unless it's been canceled");
         }
@@ -304,10 +311,16 @@ public class CompetitionService {
 
     @Transactional(readOnly = true)
     public Page<CompetitionDTO> getCompetitionDTOs(Pageable pageable) {
-        return competitionRepository.findAll(pageable).map(competitionMapper::toDTO);
+        return competitionRepository.findAllOrdered(pageable).map(competitionMapper::toDTO);
     }
 
     public Competition getById(Long id) {
         return competitionRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException(ResourceType.COMPETITION));
+    }
+
+    private void validateMinDateRange(LocalDateTime start, LocalDateTime end) {
+        if (!end.isAfter(start.plusMinutes(5))) {
+            throw new IllegalArgumentException("Invalid starting/ending dates");
+        }
     }
 }

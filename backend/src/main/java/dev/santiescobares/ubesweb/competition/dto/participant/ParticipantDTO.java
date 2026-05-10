@@ -16,6 +16,8 @@ public record ParticipantDTO(
         IdType idType,
         String idNumber,
         School school,
-        int shirtNumber
+        Integer shirtNumber,
+        String studentCertificateURL,
+        String medicalCertificateURL
 ) {
 }

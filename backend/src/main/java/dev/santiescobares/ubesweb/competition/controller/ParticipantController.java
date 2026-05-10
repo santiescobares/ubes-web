@@ -68,8 +68,9 @@ public class ParticipantController {
     @GetMapping
     public ResponseEntity<Page<ParticipantDTO>> getAll(
             @RequestParam Long competitionId,
+            @RequestParam(required = false) String search,
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        return ResponseEntity.ok(participantService.getParticipantDTOs(competitionId, pageable));
+        return ResponseEntity.ok(participantService.getParticipantDTOs(competitionId, search, pageable));
     }
 }

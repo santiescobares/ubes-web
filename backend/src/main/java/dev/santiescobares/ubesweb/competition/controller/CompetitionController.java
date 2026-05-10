@@ -67,13 +67,12 @@ public class CompetitionController {
 
     @PatchMapping("/{id}/schedule-registration")
     @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION')")
-    public ResponseEntity<Void> scheduleRegistration(
+    public ResponseEntity<CompetitionDTO> scheduleRegistration(
             @PathVariable Long id,
             @RequestParam LocalDateTime startingDate,
             @RequestParam LocalDateTime endingDate
     ) {
-        competitionService.scheduleCompetitionRegistration(id, startingDate, endingDate);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(competitionService.scheduleCompetitionRegistration(id, startingDate, endingDate));
     }
 
     @PatchMapping("/{id}/open-registration")
