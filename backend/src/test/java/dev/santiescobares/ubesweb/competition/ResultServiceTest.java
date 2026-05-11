@@ -2,7 +2,6 @@ package dev.santiescobares.ubesweb.competition;
 
 import dev.santiescobares.ubesweb.competition.dto.result.ResultCreateDTO;
 import dev.santiescobares.ubesweb.competition.dto.result.ResultDTO;
-import dev.santiescobares.ubesweb.competition.dto.result.ResultReorderDTO;
 import dev.santiescobares.ubesweb.competition.dto.result.ResultUpdateDTO;
 import dev.santiescobares.ubesweb.competition.entity.Competition;
 import dev.santiescobares.ubesweb.competition.entity.Participant;
@@ -32,6 +31,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.Month;
 import java.util.List;
 import java.util.Optional;
@@ -67,31 +67,28 @@ class ResultServiceTest {
 
     @Test
     void addResult_whenCompetitionNotFinished_throwsInvalidOperationException() {
-        Competition competition = competition(1L, CompetitionStatus.ON_GOING);
+        Competition competition = competition(1L, CompetitionStatus.ONGOING);
         when(competitionService.getById(1L)).thenReturn(competition);
 
-        ResultCreateDTO dto = new ResultCreateDTO(ParticipantPositionType.INDIVIDUAL, "Escuela X", null);
+        ResultCreateDTO dto = new ResultCreateDTO(ParticipantPositionType.INDIVIDUAL, 1, "Escuela X", null);
 
         assertThatThrownBy(() -> resultService.addResult(1L, dto))
                 .isInstanceOf(InvalidOperationException.class);
     }
 
     @Test
-    void addResult_autoAssignsPositionNumber() {
+    void addResult_savesResultAndPublishesEvent() {
         Competition competition = competition(1L, CompetitionStatus.FINISHED);
-        ResultCreateDTO dto = new ResultCreateDTO(ParticipantPositionType.INDIVIDUAL, "Escuela X", null);
+        ResultCreateDTO dto = new ResultCreateDTO(ParticipantPositionType.INDIVIDUAL, 1, "Escuela X", null);
         Result result = new Result();
         result.setCompetition(competition);
 
         when(competitionService.getById(1L)).thenReturn(competition);
-        when(resultRepository.findMaxPositionNumberByCompetitionIdAndPositionType(1L, ParticipantPositionType.INDIVIDUAL))
-                .thenReturn(Optional.of(2));
         when(resultMapper.toEntity(dto)).thenReturn(result);
         when(resultMapper.toDTO(result)).thenReturn(mock(ResultDTO.class));
 
         resultService.addResult(1L, dto);
 
-        assertThat(result.getPositionNumber()).isEqualTo(3);
         verify(resultRepository).save(result);
         verify(eventPublisher).publishEvent(any(CompetitionResultUpdateEvent.class));
     }
@@ -104,13 +101,11 @@ class ResultServiceTest {
         Participant participant = new Participant();
         participant.setCompetition(other);
 
-        ResultCreateDTO dto = new ResultCreateDTO(ParticipantPositionType.INDIVIDUAL, "Escuela X", 10L);
+        ResultCreateDTO dto = new ResultCreateDTO(ParticipantPositionType.INDIVIDUAL, 1, "Escuela X", 10L);
         Result result = new Result();
         result.setCompetition(competition);
 
         when(competitionService.getById(1L)).thenReturn(competition);
-        when(resultRepository.findMaxPositionNumberByCompetitionIdAndPositionType(any(), any()))
-                .thenReturn(Optional.empty());
         when(resultMapper.toEntity(dto)).thenReturn(result);
         when(participantService.getById(10L)).thenReturn(participant);
 
@@ -169,7 +164,9 @@ class ResultServiceTest {
 
     @Test
     void deleteResult_deletesResult() {
+        Competition competition = competition(1L, CompetitionStatus.FINISHED);
         Result result = new Result();
+        result.setCompetition(competition);
         when(resultRepository.findById(1L)).thenReturn(Optional.of(result));
 
         resultService.deleteResult(1L);
@@ -177,60 +174,54 @@ class ResultServiceTest {
         verify(resultRepository).delete(result);
     }
 
-    // --- reorderResults ---
+    // --- 7-day modification window ---
 
     @Test
-    void reorderResults_withMismatchedIds_throwsInvalidOperationException() {
-        Result r1 = result(1L, ParticipantPositionType.INDIVIDUAL, 1);
-        Result r2 = result(2L, ParticipantPositionType.INDIVIDUAL, 2);
+    void updateResult_withinWindow_day1_allows() {
+        Competition competition = competition(1L, CompetitionStatus.FINISHED, LocalDateTime.now().minusDays(1));
+        Result result = new Result();
+        result.setCompetition(competition);
 
-        when(resultRepository.findAllByCompetitionIdAndPositionType(1L, ParticipantPositionType.INDIVIDUAL))
-                .thenReturn(List.of(r1, r2));
+        ResultUpdateDTO dto = new ResultUpdateDTO(null, null, true);
 
-        ResultReorderDTO dto = new ResultReorderDTO(List.of(
-                new ResultReorderDTO.ResultOrderEntry(1L, 2),
-                new ResultReorderDTO.ResultOrderEntry(99L, 1) // id 99 no existe
-        ));
+        when(resultRepository.findById(1L)).thenReturn(Optional.of(result));
+        when(resultMapper.toDTO(result)).thenReturn(mock(ResultDTO.class));
 
-        assertThatThrownBy(() -> resultService.reorderResults(1L, ParticipantPositionType.INDIVIDUAL, dto))
-                .isInstanceOf(InvalidOperationException.class);
+        resultService.updateResult(1L, dto);
+
+        verify(eventPublisher).publishEvent(any(CompetitionResultUpdateEvent.class));
     }
 
     @Test
-    void reorderResults_withDuplicatePositions_throwsInvalidOperationException() {
-        Result r1 = result(1L, ParticipantPositionType.INDIVIDUAL, 1);
-        Result r2 = result(2L, ParticipantPositionType.INDIVIDUAL, 2);
+    void updateResult_withinWindow_justBeforeExpiry_allows() {
+        LocalDateTime endingDate = LocalDateTime.now().minusDays(7).plusSeconds(60);
+        Competition competition = competition(1L, CompetitionStatus.FINISHED, endingDate);
+        Result result = new Result();
+        result.setCompetition(competition);
 
-        when(resultRepository.findAllByCompetitionIdAndPositionType(1L, ParticipantPositionType.INDIVIDUAL))
-                .thenReturn(List.of(r1, r2));
+        ResultUpdateDTO dto = new ResultUpdateDTO(null, null, true);
 
-        ResultReorderDTO dto = new ResultReorderDTO(List.of(
-                new ResultReorderDTO.ResultOrderEntry(1L, 1),
-                new ResultReorderDTO.ResultOrderEntry(2L, 1) // duplicado
-        ));
+        when(resultRepository.findById(1L)).thenReturn(Optional.of(result));
+        when(resultMapper.toDTO(result)).thenReturn(mock(ResultDTO.class));
 
-        assertThatThrownBy(() -> resultService.reorderResults(1L, ParticipantPositionType.INDIVIDUAL, dto))
-                .isInstanceOf(InvalidOperationException.class);
+        resultService.updateResult(1L, dto);
+
+        verify(eventPublisher).publishEvent(any(CompetitionResultUpdateEvent.class));
     }
 
     @Test
-    void reorderResults_valid_updatesPositions() {
-        Result r1 = result(1L, ParticipantPositionType.INDIVIDUAL, 1);
-        Result r2 = result(2L, ParticipantPositionType.INDIVIDUAL, 2);
+    void updateResult_outsideWindow_throwsInvalidOperationException() {
+        LocalDateTime endingDate = LocalDateTime.now().minusDays(8);
+        Competition competition = competition(1L, CompetitionStatus.FINISHED, endingDate);
+        Result result = new Result();
+        result.setCompetition(competition);
 
-        when(resultRepository.findAllByCompetitionIdAndPositionType(1L, ParticipantPositionType.INDIVIDUAL))
-                .thenReturn(List.of(r1, r2));
+        ResultUpdateDTO dto = new ResultUpdateDTO(null, null, true);
 
-        ResultReorderDTO dto = new ResultReorderDTO(List.of(
-                new ResultReorderDTO.ResultOrderEntry(1L, 2),
-                new ResultReorderDTO.ResultOrderEntry(2L, 1)
-        ));
+        when(resultRepository.findById(1L)).thenReturn(Optional.of(result));
 
-        resultService.reorderResults(1L, ParticipantPositionType.INDIVIDUAL, dto);
-
-        assertThat(r1.getPositionNumber()).isEqualTo(2);
-        assertThat(r2.getPositionNumber()).isEqualTo(1);
-        verify(resultRepository).saveAll(any());
+        assertThatThrownBy(() -> resultService.updateResult(1L, dto))
+                .isInstanceOf(InvalidOperationException.class);
     }
 
     // --- findResultDTOs ---
@@ -274,10 +265,15 @@ class ResultServiceTest {
     // --- helpers ---
 
     private Competition competition(Long id, CompetitionStatus status) {
+        return competition(id, status, LocalDateTime.now().minusDays(1));
+    }
+
+    private Competition competition(Long id, CompetitionStatus status, LocalDateTime endingDate) {
         Competition competition = new Competition();
         competition.setId(id);
         competition.setStatus(status);
         competition.setRegistrationStatus(RegistrationStatus.EXPIRED);
+        competition.setEndingDate(endingDate);
         return competition;
     }
 

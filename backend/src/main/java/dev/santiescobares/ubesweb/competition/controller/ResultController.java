@@ -3,7 +3,6 @@ package dev.santiescobares.ubesweb.competition.controller;
 import dev.santiescobares.ubesweb.Global;
 import dev.santiescobares.ubesweb.competition.dto.result.ResultCreateDTO;
 import dev.santiescobares.ubesweb.competition.dto.result.ResultDTO;
-import dev.santiescobares.ubesweb.competition.dto.result.ResultReorderDTO;
 import dev.santiescobares.ubesweb.competition.dto.result.ResultUpdateDTO;
 import dev.santiescobares.ubesweb.competition.enums.ParticipantPositionType;
 import dev.santiescobares.ubesweb.competition.service.ResultService;
@@ -37,7 +36,7 @@ public class ResultController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION')")
+    @PreAuthorize("hasAuthority('EXECUTIVE')")
     public ResponseEntity<ResultDTO> create(
             @PathVariable Long competitionId,
             @RequestBody @Valid ResultCreateDTO dto
@@ -46,7 +45,7 @@ public class ResultController {
     }
 
     @PutMapping("/{resultId}")
-    @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION')")
+    @PreAuthorize("hasAuthority('EXECUTIVE')")
     public ResponseEntity<ResultDTO> update(
             @PathVariable Long competitionId,
             @PathVariable Long resultId,
@@ -56,20 +55,9 @@ public class ResultController {
     }
 
     @DeleteMapping("/{resultId}")
-    @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION')")
+    @PreAuthorize("hasAuthority('EXECUTIVE')")
     public ResponseEntity<Void> delete(@PathVariable Long competitionId, @PathVariable Long resultId) {
         resultService.deleteResult(resultId);
         return ResponseEntity.noContent().build();
-    }
-
-    @PutMapping("/{positionType}/reorder")
-    @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION')")
-    public ResponseEntity<Void> reorder(
-            @PathVariable Long competitionId,
-            @PathVariable ParticipantPositionType positionType,
-            @RequestBody @Valid ResultReorderDTO dto
-    ) {
-        resultService.reorderResults(competitionId, positionType, dto);
-        return ResponseEntity.ok().build();
     }
 }
