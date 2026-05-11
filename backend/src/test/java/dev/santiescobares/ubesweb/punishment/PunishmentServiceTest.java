@@ -1,5 +1,7 @@
 package dev.santiescobares.ubesweb.punishment;
 
+import dev.santiescobares.ubesweb.Global;
+import dev.santiescobares.ubesweb.config.JwtConfig;
 import dev.santiescobares.ubesweb.context.RequestContextData;
 import dev.santiescobares.ubesweb.context.RequestContextHolder;
 import dev.santiescobares.ubesweb.enums.Role;
@@ -23,15 +25,19 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -41,6 +47,8 @@ class PunishmentServiceTest {
     @Mock PunishmentRepository punishmentRepository;
     @Mock PunishmentMapper punishmentMapper;
     @Mock ApplicationEventPublisher eventPublisher;
+    @Mock StringRedisTemplate redisTemplate;
+    @Mock JwtConfig jwtConfig;
 
     @InjectMocks PunishmentService punishmentService;
 
@@ -115,7 +123,7 @@ class PunishmentServiceTest {
 
         assertThat(result).isEqualTo(punishmentDTO);
         assertThat(punishment.getExpiresAt()).isNull();
-        assertThat(punishment.getIssuedOn()).isEqualTo(target);
+        assertThat(punishment.getTarget()).isEqualTo(target);
         assertThat(punishment.getIssuedBy()).isEqualTo(currentUser);
         verify(punishmentRepository).save(punishment);
         verify(eventPublisher).publishEvent(any(PunishmentCreateEvent.class));
@@ -175,7 +183,7 @@ class PunishmentServiceTest {
 
         Punishment punishment = new Punishment();
         punishment.setId(1L);
-        punishment.setIssuedOn(issuedOnUser);
+        punishment.setTarget(issuedOnUser);
 
         when(punishmentRepository.findById(1L)).thenReturn(Optional.of(punishment));
 
@@ -193,7 +201,7 @@ class PunishmentServiceTest {
 
         Punishment punishment = new Punishment();
         punishment.setId(1L);
-        punishment.setIssuedOn(issuedOnUser);
+        punishment.setTarget(issuedOnUser);
 
         when(punishmentRepository.findById(1L)).thenReturn(Optional.of(punishment));
         when(userService.getCurrentUser()).thenReturn(currentUser);
@@ -253,5 +261,53 @@ class PunishmentServiceTest {
         boolean result = punishmentService.hasActivePunishments(user);
 
         assertThat(result).isTrue();
+    }
+
+    // --- Redis blacklist ---
+
+    @Test
+    void createPunishment_permanent_setsRedisEntryWithAccessTokenTtl() {
+        User target = new User();
+        target.setId(targetUserId);
+        target.setRole(Role.USER);
+        Punishment punishment = new Punishment();
+        punishment.setId(1L);
+        punishment.setTarget(target);
+        ValueOperations<String, String> valueOps = mock(ValueOperations.class);
+
+        when(userService.getById(targetUserId)).thenReturn(target);
+        when(punishmentRepository.hasActivePunishments(eq(targetUserId), any(LocalDateTime.class))).thenReturn(false);
+        when(punishmentMapper.toEntity(any())).thenReturn(punishment);
+        when(userService.getCurrentUser()).thenReturn(new User());
+        when(punishmentMapper.toDTO(punishment)).thenReturn(mock(PunishmentDTO.class));
+        when(jwtConfig.getAccessExpiration()).thenReturn(86_400_000L);
+        when(redisTemplate.opsForValue()).thenReturn(valueOps);
+
+        punishmentService.createPunishment(new PunishmentCreateDTO(targetUserId, "Conducta", 0));
+
+        verify(valueOps).set(
+                eq(Global.REDIS_USER_PUNISHMENT_KEY + targetUserId),
+                eq("1"),
+                eq(86_400_000L),
+                eq(TimeUnit.MILLISECONDS));
+    }
+
+    @Test
+    void removePunishment_deletesRedisEntry() {
+        User issuedOnUser = new User();
+        issuedOnUser.setId(targetUserId);
+        issuedOnUser.setRole(Role.USER);
+
+        Punishment punishment = new Punishment();
+        punishment.setId(1L);
+        punishment.setTarget(issuedOnUser);
+
+        when(punishmentRepository.findById(1L)).thenReturn(Optional.of(punishment));
+        when(userService.getCurrentUser()).thenReturn(new User());
+        when(punishmentMapper.toDTO(punishment)).thenReturn(mock(PunishmentDTO.class));
+
+        punishmentService.removePunishment(1L, new PunishmentRemoveDTO("Apelación"));
+
+        verify(redisTemplate).delete(Global.REDIS_USER_PUNISHMENT_KEY + targetUserId);
     }
 }

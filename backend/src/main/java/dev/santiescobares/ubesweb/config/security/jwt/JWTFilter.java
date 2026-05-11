@@ -51,6 +51,14 @@ public class JWTFilter extends OncePerRequestFilter {
         }
 
         String userId = accessToken.getClaim("userId").asString();
+
+        if (Boolean.TRUE.equals(redisTemplate.hasKey(REDIS_USER_PUNISHMENT_KEY + userId))) {
+            authService.blacklistToken(rawToken);
+            CookieUtil.clearHttpOnlyCookie(response, ACCESS_TOKEN_COOKIE);
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Account banned");
+            return;
+        }
+
         String logoutTimestamp = redisTemplate.opsForValue().get(REDIS_FORCED_LOGOUT_KEY + userId);
 
         if (logoutTimestamp != null && accessToken.getIssuedAtAsInstant().toEpochMilli() < Long.parseLong(logoutTimestamp)) {

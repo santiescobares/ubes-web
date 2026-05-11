@@ -27,6 +27,7 @@ public final class Global {
 
     public final String REDIS_TOKEN_BLACKLIST_KEY = "token_blacklist:";
     public final String REDIS_FORCED_LOGOUT_KEY = "forced_logout:";
+    public final String REDIS_USER_PUNISHMENT_KEY = "ubes:punish:user:";
 
     public LocalDate COMPETITION_RESULTS_DEADLINE() {
         return LocalDate.of(LocalDate.now().getYear(), Month.SEPTEMBER, 22);

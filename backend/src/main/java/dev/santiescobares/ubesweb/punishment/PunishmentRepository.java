@@ -13,24 +13,24 @@ public interface PunishmentRepository extends JpaRepository<Punishment, Long> {
 
     @Query("""
         SELECT COUNT(p) > 0 FROM Punishment p
-        WHERE p.issuedOn.id = :issuedOnId
+        WHERE p.target.id = :targetId
         AND p.removedAt IS NULL
         AND (p.expiresAt IS NULL OR p.expiresAt > :now)
     """)
     boolean hasActivePunishments(
-            @Param("issuedOnId") UUID issuedOnId,
+            @Param("targetId") UUID targetId,
             @Param("now") LocalDateTime now
     );
 
     @Query("""
         SELECT p FROM Punishment p
         WHERE (:id IS NULL OR p.id = :id)
-        AND (cast(:issuedOnId as uuid) IS NULL OR p.issuedOn.id = :issuedOnId)
+        AND (cast(:targetId as uuid) IS NULL OR p.target.id = :targetId)
         AND (cast(:issuedById as uuid) IS NULL OR p.issuedBy.id = :issuedById)
     """)
     Page<Punishment> findPunishmentsByFilters(
             @Param("id") Long id,
-            @Param("issuedOnId") UUID issuedOnId,
+            @Param("targetId") UUID targetId,
             @Param("issuedById") UUID issuedById,
             Pageable pageable
     );

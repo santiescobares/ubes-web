@@ -1,5 +1,7 @@
 package dev.santiescobares.ubesweb.punishment;
 
+import dev.santiescobares.ubesweb.Global;
+import dev.santiescobares.ubesweb.config.JwtConfig;
 import dev.santiescobares.ubesweb.context.RequestContextHolder;
 import dev.santiescobares.ubesweb.enums.ResourceType;
 import dev.santiescobares.ubesweb.exception.type.InvalidOperationException;
@@ -16,11 +18,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -35,6 +40,10 @@ public class PunishmentService {
 
     private final ApplicationEventPublisher eventPublisher;
 
+    private final StringRedisTemplate redisTemplate;
+
+    private final JwtConfig jwtConfig;
+
     @Transactional
     public PunishmentDTO createPunishment(PunishmentCreateDTO dto) {
         User target = userService.getById(dto.targetId());
@@ -47,7 +56,7 @@ public class PunishmentService {
         }
 
         Punishment punishment = punishmentMapper.toEntity(dto);
-        punishment.setIssuedOn(target);
+        punishment.setTarget(target);
         punishment.setIssuedBy(userService.getCurrentUser());
 
         if (dto.durationSeconds() > 0) {
@@ -55,6 +64,16 @@ public class PunishmentService {
         }
 
         punishmentRepository.save(punishment);
+
+        long ttlMs = jwtConfig.getAccessExpiration();
+        if (punishment.getExpiresAt() != null) {
+            long untilExpiry = punishment.getExpiresAt().toInstant(ZoneOffset.UTC).toEpochMilli() - System.currentTimeMillis();
+            ttlMs = Math.min(ttlMs, untilExpiry);
+        }
+        if (ttlMs > 0) {
+            redisTemplate.opsForValue().set(
+                    Global.REDIS_USER_PUNISHMENT_KEY + punishment.getTarget().getId(), "1", ttlMs, TimeUnit.MILLISECONDS);
+        }
 
         eventPublisher.publishEvent(new PunishmentCreateEvent(RequestContextHolder.getCurrentSession().userId(), punishment));
 
@@ -67,11 +86,13 @@ public class PunishmentService {
         if (!punishment.isActive()) {
             throw new InvalidOperationException("Punishment is not active");
         }
-        if (!RequestContextHolder.getCurrentSession().role().getAuthority().surpasses(punishment.getIssuedOn().getRole().getAuthority())) {
+        if (!RequestContextHolder.getCurrentSession().role().getAuthority().surpasses(punishment.getTarget().getRole().getAuthority())) {
             throw new InvalidOperationException("You can't remove that user's punishment");
         }
 
         punishment.remove(userService.getCurrentUser(), dto.reason());
+
+        redisTemplate.delete(Global.REDIS_USER_PUNISHMENT_KEY + punishment.getTarget().getId());
 
         eventPublisher.publishEvent(new PunishmentRemoveEvent(RequestContextHolder.getCurrentSession().userId(), punishment));
 
