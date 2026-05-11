@@ -9,10 +9,10 @@ public record ParticipantCreateDTO(
         @NotNull(message = "Participant role is required")
         ParticipantRole role,
         @NotBlank(message = "First name is required")
-        @Size(max = 30, message = "First name is too long")
+        @Size(min = 3, max = 30, message = "First name is either too short or too long")
         String firstName,
         @NotBlank(message = "Last name is required")
-        @Size(max = 30, message = "Last name is too long")
+        @Size(min = 3, max = 30, message = "Last name is either too short or too long")
         String lastName,
         @NotNull(message = "ID type is required")
         IdType idType,

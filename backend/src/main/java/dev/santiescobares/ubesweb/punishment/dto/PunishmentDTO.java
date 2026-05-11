@@ -9,7 +9,7 @@ public record PunishmentDTO(
         Long id,
         Instant createdAt,
         Instant updatedAt,
-        UserSnapshotDTO issuedOn,
+        UserSnapshotDTO target,
         UserSnapshotDTO issuedBy,
         String reason,
         LocalDateTime expiresAt,

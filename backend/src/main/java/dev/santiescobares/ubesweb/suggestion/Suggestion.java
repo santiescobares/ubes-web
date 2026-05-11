@@ -14,7 +14,6 @@ import java.util.List;
 @Entity
 @Table(name = "suggestions", indexes = {
         @Index(name = "idx_suggestion_created_by", columnList = "created_by_id"),
-        @Index(name = "idx_suggestion_hidden_by", columnList = "hidden_by_id")
 })
 @Getter
 @Setter

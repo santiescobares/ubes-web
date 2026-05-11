@@ -4,9 +4,12 @@ import lombok.experimental.UtilityClass;
 
 import java.time.LocalDate;
 import java.time.Month;
+import java.util.UUID;
 
 @UtilityClass
 public final class Global {
+
+    public final UUID SYSTEM_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
 
     public final String BASE_URL = "/api/v1";
     public final String PROD_URL_LANDING = "http://localhost:5173";

@@ -6,7 +6,7 @@ import dev.santiescobares.ubesweb.competition.enums.ParticipantPositionType;
 public record ResultDTO(
         Long id,
         ParticipantPositionType positionType,
-        Integer positionNumber,
+        int positionNumber,
         String name,
         int points,
         ParticipantSnapshotDTO participant

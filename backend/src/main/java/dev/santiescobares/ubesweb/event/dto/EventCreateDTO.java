@@ -3,10 +3,7 @@ package dev.santiescobares.ubesweb.event.dto;
 import dev.santiescobares.ubesweb.event.enums.EventType;
 import dev.santiescobares.ubesweb.model.location.LocationDTO;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.FutureOrPresent;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 
 import java.time.LocalDateTime;
 
@@ -19,10 +16,10 @@ public record EventCreateDTO(
         @Size(max = 1000, message = "Description is too long")
         String description,
         @NotNull(message = "Starting date is required")
-        @FutureOrPresent(message = "Starting date must be a future or present date")
+        @Future(message = "Starting date must be a future date")
         LocalDateTime startingDate,
         @NotNull(message = "Ending date is required")
-        @FutureOrPresent(message = "Ending date must be a future or present date")
+        @Future(message = "Ending date must be a future date")
         LocalDateTime endingDate,
         @Valid
         LocationDTO location

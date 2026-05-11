@@ -11,9 +11,8 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "punishments", indexes = {
-        @Index(name = "idx_punishment_issued_on", columnList = "issued_on_id"),
-        @Index(name = "idx_punishment_issued_by", columnList = "issued_by_id"),
-        @Index(name = "idx_punishment_removed_by", columnList = "removed_by_id")
+        @Index(name = "idx_punishment_target", columnList = "target_id"),
+        @Index(name = "idx_punishment_issued_by", columnList = "issued_by_id")
 })
 @Getter
 @Setter
@@ -24,8 +23,8 @@ public class Punishment extends CLoggableEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "issued_on_id", nullable = false)
-    private User issuedOn;
+    @JoinColumn(name = "target_id", nullable = false)
+    private User target;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "issued_by_id", nullable = false)
     private User issuedBy;

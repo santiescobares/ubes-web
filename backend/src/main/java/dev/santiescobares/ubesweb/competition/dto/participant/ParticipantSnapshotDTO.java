@@ -9,6 +9,6 @@ public record ParticipantSnapshotDTO(
         String firstName,
         String lastName,
         School school,
-        int shirtNumber
+        Integer shirtNumber
 ) {
 }

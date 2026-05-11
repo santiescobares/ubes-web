@@ -8,7 +8,7 @@ public record PostCreateDTO(
         @Size(max = 100, message = "Title is too long")
         String title,
         @NotBlank(message = "Body is required")
-        @Size(min = 10, max = 100, message = "Body is either too short or too long")
+        @Size(min = 10, max = 5000, message = "Body is either too short or too long")
         String body
 ) {
 }

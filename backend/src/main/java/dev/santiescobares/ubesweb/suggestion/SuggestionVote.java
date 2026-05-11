@@ -1,6 +1,5 @@
 package dev.santiescobares.ubesweb.suggestion;
 
-import dev.santiescobares.ubesweb.suggestion.id.SuggestionVoteId;
 import dev.santiescobares.ubesweb.user.User;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -9,22 +8,27 @@ import lombok.Setter;
 import java.time.Instant;
 
 @Entity
-@Table(name = "suggestion_votes", indexes = {
-        @Index(name = "idx_suggestion_vote_voters", columnList = "voter_id")
-})
+@Table(
+        name = "suggestion_votes",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uq_suggestion_vote_voter", columnNames = {"suggestion_id", "voter_id"})
+        },
+        indexes = {
+                @Index(name = "idx_suggestion_vote_voters", columnList = "voter_id")
+        }
+)
 @Getter
 @Setter
 public class SuggestionVote {
 
-    @EmbeddedId
-    private SuggestionVoteId id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("suggestionId")
     @JoinColumn(name = "suggestion_id", nullable = false)
     private Suggestion suggestion;
     @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("voterId")
     @JoinColumn(name = "voter_id", nullable = false)
     private User voter;
 

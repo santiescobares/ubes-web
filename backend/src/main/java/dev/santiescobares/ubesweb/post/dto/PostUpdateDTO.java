@@ -3,9 +3,9 @@ package dev.santiescobares.ubesweb.post.dto;
 import jakarta.validation.constraints.Size;
 
 public record PostUpdateDTO(
-        @Size(max = 100, message = "Title is too long")
+        @Size(min = 1, max = 100, message = "Title is either too short or too long")
         String title,
-        @Size(min = 10, max = 100, message = "Body is either too short or too long")
+        @Size(min = 10, max = 5000, message = "Body is either too short or too long")
         String body
 ) {
 }

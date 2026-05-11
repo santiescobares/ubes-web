@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Size;
 
 public record PunishmentRemoveDTO(
         @NotBlank(message = "Reason is required")
-        @Size(max = 500, message = "Reason is too long")
+        @Size(min = 10, max = 500, message = "Reason is either too short or too long")
         String reason
 ) {
 }

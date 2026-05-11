@@ -30,12 +30,10 @@ public class Result {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "competition_id", nullable = false)
     private Competition competition;
-
     @Enumerated(EnumType.STRING)
-    @Column(name = "position_type", nullable = false)
+    @Column(nullable = false)
     private ParticipantPositionType positionType;
-
-    @Column(name = "position_number", nullable = false)
+    @Column(nullable = false)
     private int positionNumber;
 
     @Column(length = 100)

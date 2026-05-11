@@ -17,7 +17,7 @@ public class Document extends CULoggableEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, length = 50)
+    @Column(length = 50)
     private String name;
     @Enumerated(EnumType.STRING)
     private DocumentType type;

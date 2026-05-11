@@ -7,9 +7,9 @@ import jakarta.validation.constraints.*;
 
 public record ParticipantUpdateDTO(
         ParticipantRole role,
-        @Size(max = 30, message = "First name is too long")
+        @Size(min = 3, max = 30, message = "First name is either too short or too long")
         String firstName,
-        @Size(max = 30, message = "Last name is too long")
+        @Size(min = 3, max = 30, message = "Last name is either too short or too long")
         String lastName,
         IdType idType,
         @Size(max = 15, message = "ID number is too long")

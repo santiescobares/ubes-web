@@ -10,7 +10,6 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -18,8 +17,11 @@ import java.util.List;
 @Table(
         name = "competitions",
         check = {
-                @CheckConstraint(name = "participants_check", constraint = "min_participants > 0 AND max_participants > 1"),
-                @CheckConstraint(name = "max_coaches_check", constraint = "max_coaches >= 0 AND max_coaches <= 99")
+                @CheckConstraint(name = "participants_check", constraint = "min_participants > 0 " +
+                        "AND max_participants >= 1 " +
+                        "AND min_participants <= 99 " +
+                        "AND max_participants <= 99"),
+                @CheckConstraint(name = "coaches_check", constraint = "max_coaches >= 0 AND max_coaches <= 99")
         },
         indexes = {
                 @Index(name = "idx_competition_regulation_documents", columnList = "regulation_document_id")
@@ -34,7 +36,6 @@ public class Competition extends Event {
     private Document regulationDocument;
 
     private int minParticipants, maxParticipants;
-    @Column(nullable = false)
     private int maxCoaches;
     private boolean requiresShirtNumbers, requiresMedicalCertificates;
 
@@ -65,20 +66,6 @@ public class Competition extends Event {
     public boolean removeParticipant(Participant participant) {
         if (participants == null) return false;
         return participants.remove(participant);
-    }
-
-    public List<Result> getResults() {
-        return results != null ? Collections.unmodifiableList(results) : Collections.emptyList();
-    }
-
-    public void addResults(Collection<Result> results) {
-        if (this.results == null) {
-            this.results = new ArrayList<>();
-        }
-        results.forEach(result -> {
-            result.setCompetition(this);
-            this.results.add(result);
-        });
     }
 
     @Override
