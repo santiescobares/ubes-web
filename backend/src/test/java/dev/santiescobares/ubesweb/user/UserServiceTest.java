@@ -229,6 +229,17 @@ class UserServiceTest {
         assertThat(result.getContent()).containsExactly(userDTO);
     }
 
+    // --- anonymizeDeletedUsers ---
+
+    @Test
+    void anonymizeDeletedUsers_delegatesToRepository() {
+        when(userRepository.anonymizeDeletedUsers()).thenReturn(3);
+
+        userService.anonymizeDeletedUsers();
+
+        verify(userRepository).anonymizeDeletedUsers();
+    }
+
     // --- findByGoogleId ---
 
     @Test

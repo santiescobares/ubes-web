@@ -8,7 +8,8 @@ public enum ErrorCode {
     RESOURCE_ALREADY_EXISTS,
     THIRD_PARTY_EXCEPTION,
     INVALID_TOKEN,
-    INACTIVE_USER;
+    INACTIVE_USER,
+    INTERNAL_ERROR;
 
     @Override
     public String toString() {

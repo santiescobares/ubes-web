@@ -18,12 +18,13 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByGoogleId(String googleId);
 
     @Modifying
-    @Query(value = "UPDATE users " +
-            "SET first_name = NULL, last_name = NULL, email = NULL, google_id = NULL " +
-            "WHERE deleted_at IS NOT NULL " +
-            "AND deleted_at <= NOW() - INTERVAL '5 days' " +
-            "AND email IS NOT NULL",
-            nativeQuery = true
-    )
+    @Query(value = """
+            UPDATE users
+            SET first_name = NULL, last_name = NULL, email = NULL,
+                google_id = NULL, picture_key = NULL
+            WHERE deleted_at IS NOT NULL
+            AND deleted_at <= NOW() - INTERVAL '5 days'
+            AND email IS NOT NULL
+            """, nativeQuery = true)
     int anonymizeDeletedUsers();
 }

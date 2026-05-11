@@ -23,10 +23,10 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // TODO remove it or handle it in a better way for prod (at this moment this will send the full stack trace to the client)
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ExceptionResponseDTO> handleGenericException(Exception e, HttpServletRequest request) {
-        return buildResponse(e, HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.INVALID_OPERATION.toString(), e.getMessage(), request);
+        return buildResponse(e, HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.INTERNAL_ERROR.toString(),
+                "Internal server error. Refer the trace ID to support.", request);
     }
 
     @ExceptionHandler(BackendException.class)
