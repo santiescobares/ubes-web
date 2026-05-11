@@ -5,6 +5,7 @@ import dev.santiescobares.ubesweb.competition.dto.participant.ParticipantDTO;
 import dev.santiescobares.ubesweb.competition.dto.participant.ParticipantUpdateDTO;
 import dev.santiescobares.ubesweb.competition.entity.Competition;
 import dev.santiescobares.ubesweb.competition.entity.Participant;
+import dev.santiescobares.ubesweb.competition.enums.CompetitionStatus;
 import dev.santiescobares.ubesweb.competition.enums.ParticipantRole;
 import dev.santiescobares.ubesweb.competition.enums.RegistrationStatus;
 import dev.santiescobares.ubesweb.competition.event.participant.CompetitionAddParticipantsEvent;
@@ -14,12 +15,16 @@ import dev.santiescobares.ubesweb.competition.mapper.ParticipantMapper;
 import dev.santiescobares.ubesweb.competition.repository.CompetitionRepository;
 import dev.santiescobares.ubesweb.competition.repository.ParticipantRepository;
 import dev.santiescobares.ubesweb.config.S3Config;
+import dev.santiescobares.ubesweb.context.RequestContextData;
 import dev.santiescobares.ubesweb.context.RequestContextHolder;
 import dev.santiescobares.ubesweb.enums.ResourceType;
+import dev.santiescobares.ubesweb.enums.RoleAuthority;
+import dev.santiescobares.ubesweb.enums.School;
 import dev.santiescobares.ubesweb.exception.type.InvalidOperationException;
 import dev.santiescobares.ubesweb.exception.type.ResourceAlreadyExistsException;
 import dev.santiescobares.ubesweb.exception.type.ResourceNotFoundException;
 import dev.santiescobares.ubesweb.service.StorageService;
+import dev.santiescobares.ubesweb.user.UserService;
 import dev.santiescobares.ubesweb.util.FileUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -45,6 +50,7 @@ public class ParticipantService {
     private static final long MAX_CERTIFICATE_FILE_SIZE = 5_242_880;
 
     private final CompetitionService competitionService;
+    private final UserService userService;
     private final StorageService storageService;
 
     private final ParticipantRepository participantRepository;
@@ -65,6 +71,8 @@ public class ParticipantService {
     ) {
         Competition competition = competitionService.getById(competitionId);
 
+        validateCompetitionStatus(competition);
+        validateDelegateScope(dto.school());
         validateNoDuplicateDocument(competitionId, dto);
         validateMaxCoaches(competition, dto);
 
@@ -100,9 +108,7 @@ public class ParticipantService {
     ) {
         Competition competition = competitionService.getById(competitionId);
 
-        if (competition.getRegistrationStatus() != RegistrationStatus.AVAILABLE) {
-            throw new InvalidOperationException("Competition is not under registration stage");
-        }
+        validateCompetitionStatus(competition);
 
         Map<String, MultipartFile> studentCertificatesMap = filesToMap(studentCertificateFiles);
         Map<String, MultipartFile> medicalCertificatesMap = filesToMap(medicalCertificateFiles);
@@ -111,6 +117,7 @@ public class ParticipantService {
         List<String> studentKeys = new ArrayList<>(), medicalKeys = new ArrayList<>();
 
         for (ParticipantCreateDTO dto : dtos) {
+            validateDelegateScope(dto.school());
             validateNoDuplicateDocument(competitionId, dto);
             validateMaxCoaches(competition, dto);
 
@@ -173,6 +180,10 @@ public class ParticipantService {
             throw new InvalidOperationException("Participant does not belong to the specified competition");
         }
 
+        validateCompetitionStatus(competition);
+        validateDelegateScope(participant.getSchool());
+        if (dto.school() != null) validateDelegateScope(dto.school());
+
         if (dto.idType() != null && dto.idNumber() != null) {
             if (participantRepository.existsByCompetitionIdAndIdTypeAndIdNumberAndIdNot(
                     competitionId, dto.idType(), dto.idNumber(), participantId)) {
@@ -216,6 +227,9 @@ public class ParticipantService {
             throw new InvalidOperationException("Participant does not belong to the specified competition");
         }
 
+        validateCompetitionStatus(competition);
+        validateDelegateScope(participant.getSchool());
+
         competition.removeParticipant(participant);
 
         eventPublisher.publishEvent(new CompetitionRemoveParticipantEvent(
@@ -234,6 +248,33 @@ public class ParticipantService {
     public Participant getById(Long id) {
         return participantRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(ResourceType.COMPETITION_PARTICIPANT));
+    }
+
+    private void validateCompetitionStatus(Competition competition) {
+        RegistrationStatus reg = competition.getRegistrationStatus();
+        CompetitionStatus status = competition.getStatus();
+
+        if (reg == RegistrationStatus.AVAILABLE) return;
+
+        boolean isExecutiveOrCompetition = RequestContextHolder.hasAuthority(
+                RoleAuthority.EXECUTIVE, RoleAuthority.COMPETITION);
+        boolean inExecutiveWindow = (reg == RegistrationStatus.EXPIRED)
+                && status == CompetitionStatus.SCHEDULED;
+
+        if (!isExecutiveOrCompetition || !inExecutiveWindow) {
+            throw new InvalidOperationException("Can't modify competition participants data at this time");
+        }
+    }
+
+    private void validateDelegateScope(School participantSchool) {
+        boolean isDelegateOnly = RequestContextHolder.hasAuthority(RoleAuthority.DELEGATE)
+                && !RequestContextHolder.hasAuthority(RoleAuthority.EXECUTIVE, RoleAuthority.COMPETITION);
+        if (!isDelegateOnly) return;
+
+        School callerSchool = userService.getCurrentUser().getSchool();
+        if (callerSchool != participantSchool) {
+            throw new InvalidOperationException("Delegates can only operate on participants from their own school");
+        }
     }
 
     private void validateNoDuplicateDocument(Long competitionId, ParticipantCreateDTO dto) {

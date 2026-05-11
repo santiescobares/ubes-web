@@ -28,7 +28,7 @@ public class ParticipantController {
     private final ParticipantService participantService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION')")
+    @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION', 'DELEGATE')")
     public ResponseEntity<ParticipantDTO> add(
             @PathVariable Long competitionId,
             @RequestPart("body") @Valid ParticipantCreateDTO dto,
@@ -52,7 +52,7 @@ public class ParticipantController {
     }
 
     @PutMapping(path = "/{participantId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION')")
+    @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION', 'DELEGATE')")
     public ResponseEntity<ParticipantDTO> update(
             @PathVariable Long competitionId,
             @PathVariable Long participantId,
@@ -65,7 +65,7 @@ public class ParticipantController {
     }
 
     @DeleteMapping("/{participantId}")
-    @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION')")
+    @PreAuthorize("hasAnyAuthority('EXECUTIVE', 'COMPETITION', 'DELEGATE')")
     public ResponseEntity<Void> remove(@PathVariable Long competitionId, @PathVariable Long participantId) {
         participantService.removeParticipant(competitionId, participantId);
         return ResponseEntity.noContent().build();
