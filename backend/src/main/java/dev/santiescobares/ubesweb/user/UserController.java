@@ -35,6 +35,7 @@ public class UserController {
     }
 
     @PutMapping
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserDTO> update(@RequestBody @Valid UserUpdateDTO dto) {
         return ResponseEntity.ok(userService.updateUser(null, dto));
     }
@@ -46,6 +47,7 @@ public class UserController {
     }
 
     @PatchMapping(value = "/picture", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserPictureDTO> updatePicture(
             @RequestPart(value = "pictureFile", required = false) MultipartFile pictureFile
     ) {
@@ -62,12 +64,14 @@ public class UserController {
     }
 
     @DeleteMapping
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> delete(HttpServletRequest request, HttpServletResponse response) {
         userService.deleteUser(request, response);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserDTO> get(@RequestParam(required = false) String email) {
         return ResponseEntity.ok(userService.getUserDTOByIdOrEmail(null, email));
     }
