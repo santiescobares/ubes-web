@@ -8,10 +8,18 @@ interface Props {
 }
 
 const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
-  SCHEDULED: { bg: '#FEF9C3', color: '#854D0E' },
-  ON_GOING:  { bg: '#BBF7D0', color: '#166534' },
-  FINISHED:  { bg: 'rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.85)' },
-  CANCELED:  { bg: '#FECACA', color: '#991B1B' },
+  SCHEDULED: { bg: 'var(--yellow)',       color: '#78350F' },
+  ON_GOING:  { bg: 'var(--green-strong)', color: '#14532D' },
+  FINISHED:  { bg: 'var(--blue)',         color: '#1E3A5F' },
+  CANCELED:  { bg: 'var(--red)',          color: '#7F1D1D' },
+}
+
+const CARD_PALETTE = ['--yellow', '--blue', '--green', '--orange', '--purple', '--pink', '--red']
+
+function getNameColor(name: string): string {
+  let hash = 0
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0
+  return `var(${CARD_PALETTE[hash % CARD_PALETTE.length]})`
 }
 
 function getRelativeLabel(ms: number, prefix: string, suffix: string): string {
@@ -69,7 +77,7 @@ export default function CompetitionCard({ competition, onClick }: Props) {
       {bannerURL ? (
         <div className="competition-card-bg" style={{ backgroundImage: `url(${bannerURL})` }} />
       ) : (
-        <div className="competition-card-bg" style={{ background: 'linear-gradient(135deg, #1A1A1A 0%, #2d2d2d 100%)' }} />
+        <div className="competition-card-bg" style={{ background: getNameColor(name) }} />
       )}
       <div className="competition-card-overlay" />
 

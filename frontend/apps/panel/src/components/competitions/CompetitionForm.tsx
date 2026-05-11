@@ -1,4 +1,4 @@
-import { Upload, Trash2, MapPin, Minus, Plus, Settings } from 'lucide-react'
+import { Upload, Trash2, MapPin, Minus, Plus, Settings, FileText } from 'lucide-react'
 
 export interface CompetitionFormState {
   name: string
@@ -8,6 +8,7 @@ export interface CompetitionFormState {
   locationName: string
   minParticipants: number
   maxParticipants: number
+  maxCoaches: number
   requiresShirtNumbers: boolean
   requiresMedicalCertificates: boolean
   registrationStartingDate?: string
@@ -22,6 +23,7 @@ export const COMPETITION_FORM_INITIAL: CompetitionFormState = {
   locationName: '',
   minParticipants: 1,
   maxParticipants: 10,
+  maxCoaches: 2,
   requiresShirtNumbers: false,
   requiresMedicalCertificates: false,
   registrationStartingDate: '',
@@ -38,6 +40,8 @@ interface Props {
   errors?: Partial<Record<keyof CompetitionFormState, string>>
   bannerFile: File | null
   setBannerFile: (f: File | null) => void
+  regulationFile: File | null
+  setRegulationFile: (f: File | null) => void
   disabled?: boolean
   showRegistrationDates?: boolean
   existingBannerURL?: string
@@ -51,6 +55,8 @@ export default function CompetitionForm({
   errors = {},
   bannerFile,
   setBannerFile,
+  regulationFile,
+  setRegulationFile,
   disabled = false,
   showRegistrationDates = false,
   existingBannerURL,
@@ -182,6 +188,39 @@ export default function CompetitionForm({
           </div>
           {errors.maxParticipants && <span className="form-error">{errors.maxParticipants}</span>}
         </div>
+      </div>
+
+      {/* Max cuerpo técnico */}
+      <div className="form-field" style={{ maxWidth: 220 }}>
+        <label className="form-label">Máx. cuerpo técnico</label>
+        <div style={{ display: 'flex', alignItems: 'stretch', gap: 6 }}>
+          <button
+            type="button"
+            className="stepper-btn"
+            onClick={() => set('maxCoaches', clamp(form.maxCoaches - 1, 0, 99))}
+            disabled={disabled || form.maxCoaches <= 0}
+          >
+            <Minus size={13} />
+          </button>
+          <input
+            className={`form-input${errors.maxCoaches ? ' error' : ''}`}
+            type="number"
+            min={0}
+            value={form.maxCoaches}
+            onChange={e => set('maxCoaches', clamp(Number(e.target.value), 0, 99))}
+            disabled={disabled}
+            style={{ textAlign: 'center', width: 64, flex: 'none' }}
+          />
+          <button
+            type="button"
+            className="stepper-btn"
+            onClick={() => set('maxCoaches', clamp(form.maxCoaches + 1, 0, 99))}
+            disabled={disabled || form.maxCoaches >= 99}
+          >
+            <Plus size={13} />
+          </button>
+        </div>
+        {errors.maxCoaches && <span className="form-error">{errors.maxCoaches}</span>}
       </div>
 
       {/* Toggles */}
@@ -316,7 +355,40 @@ export default function CompetitionForm({
             />
           </label>
         )}
-        <span className="form-hint">JPG, PNG, WebP — máx. 5 MB</span>
+        <span className="form-hint">JPG, PNG, WebP — máx. 10 MB</span>
+      </div>
+
+      {/* Reglamento */}
+      <div className="form-field">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
+          <label className="form-label" style={{ margin: 0 }}>Reglamento</label>
+          {regulationFile && (
+            <button
+              type="button"
+              className="modal-close-btn"
+              onClick={() => setRegulationFile(null)}
+              title="Quitar reglamento"
+              disabled={disabled}
+            >
+              <Trash2 size={13} />
+            </button>
+          )}
+        </div>
+        <label className="file-input-label" style={{ flexDirection: 'column', gap: 6, padding: '16px 12px', justifyContent: 'center' }}>
+          <FileText size={16} style={{ opacity: 0.5 }} />
+          {regulationFile ? (
+            <span className="file-selected" style={{ fontSize: 12 }}>{regulationFile.name}</span>
+          ) : (
+            <span style={{ fontSize: 12 }}>Seleccionar documento</span>
+          )}
+          <input
+            type="file"
+            accept=".pdf,.doc,.docx"
+            disabled={disabled}
+            onChange={e => setRegulationFile(e.target.files?.[0] ?? null)}
+          />
+        </label>
+        <span className="form-hint">PDF, DOC, DOCX — opcional</span>
       </div>
 
       {/* Fechas de inscripción (opcional) */}

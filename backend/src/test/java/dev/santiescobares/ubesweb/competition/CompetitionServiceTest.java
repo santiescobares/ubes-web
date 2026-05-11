@@ -71,7 +71,7 @@ class CompetitionServiceTest {
                 "Torneo", null,
                 LocalDateTime.now().plusDays(5),
                 LocalDateTime.now().plusDays(2),
-                null, 5, 10, false, false
+                null, 5, 10, 0, false, false
         );
 
         assertThatThrownBy(() -> competitionService.createCompetition(dto, null, null))
@@ -85,7 +85,7 @@ class CompetitionServiceTest {
                 "Torneo", null,
                 LocalDateTime.now().plusDays(1),
                 LocalDateTime.now().plusDays(5),
-                null, 20, 10, false, false
+                null, 20, 10, 0, false, false
         );
 
         assertThatThrownBy(() -> competitionService.createCompetition(dto, null, null))
@@ -99,7 +99,7 @@ class CompetitionServiceTest {
                 "Torneo", null,
                 LocalDateTime.now().plusDays(1),
                 LocalDateTime.now().plusDays(5),
-                null, 5, 20, false, false
+                null, 5, 20, 0, false, false
         );
         Competition competition = new Competition();
         competition.setId(1L);
@@ -133,7 +133,7 @@ class CompetitionServiceTest {
 
     @Test
     void scheduleRegistration_whenCompetitionAlreadyStarted_throwsInvalidOperationException() {
-        Competition competition = competitionWith(CompetitionStatus.ON_GOING, RegistrationStatus.SCHEDULED);
+        Competition competition = competitionWith(CompetitionStatus.ONGOING, RegistrationStatus.UNAVAILABLE);
         competition.setStartingDate(LocalDateTime.now().minusDays(1));
         when(competitionRepository.findById(1L)).thenReturn(Optional.of(competition));
 
@@ -163,7 +163,7 @@ class CompetitionServiceTest {
         competitionService.scheduleCompetitionRegistration(
                 1L, LocalDateTime.now().plusDays(1), LocalDateTime.now().plusDays(3));
 
-        assertThat(competition.getRegistrationStatus()).isEqualTo(RegistrationStatus.SCHEDULED);
+        assertThat(competition.getRegistrationStatus()).isEqualTo(RegistrationStatus.UNAVAILABLE);
         verify(eventPublisher).publishEvent(any(CompetitionUpdateEvent.class));
     }
 
@@ -180,7 +180,7 @@ class CompetitionServiceTest {
 
     @Test
     void openRegistration_valid_setsAvailableStatus() {
-        Competition competition = competitionWith(CompetitionStatus.SCHEDULED, RegistrationStatus.SCHEDULED);
+        Competition competition = competitionWith(CompetitionStatus.SCHEDULED, RegistrationStatus.UNAVAILABLE);
         when(competitionRepository.findById(1L)).thenReturn(Optional.of(competition));
 
         competitionService.openCompetitionRegistration(1L);
@@ -192,7 +192,7 @@ class CompetitionServiceTest {
 
     @Test
     void closeRegistration_whenNotAvailable_throwsInvalidOperationException() {
-        Competition competition = competitionWith(CompetitionStatus.SCHEDULED, RegistrationStatus.SCHEDULED);
+        Competition competition = competitionWith(CompetitionStatus.SCHEDULED, RegistrationStatus.UNAVAILABLE);
 
         assertThatThrownBy(() -> competitionService.closeCompetitionRegistration(competition, false))
                 .isInstanceOf(InvalidOperationException.class);
@@ -220,7 +220,7 @@ class CompetitionServiceTest {
 
     @Test
     void startCompetition_whenAlreadyOnGoing_throwsInvalidOperationException() {
-        Competition competition = competitionWith(CompetitionStatus.ON_GOING, RegistrationStatus.EXPIRED);
+        Competition competition = competitionWith(CompetitionStatus.ONGOING, RegistrationStatus.EXPIRED);
         when(competitionRepository.findById(1L)).thenReturn(Optional.of(competition));
 
         assertThatThrownBy(() -> competitionService.startCompetition(1L))
@@ -235,7 +235,7 @@ class CompetitionServiceTest {
         competitionService.startCompetition(1L);
 
         assertThat(competition.getRegistrationStatus()).isEqualTo(RegistrationStatus.EXPIRED);
-        assertThat(competition.getStatus()).isEqualTo(CompetitionStatus.ON_GOING);
+        assertThat(competition.getStatus()).isEqualTo(CompetitionStatus.ONGOING);
     }
 
     // --- endCompetition ---
@@ -250,7 +250,7 @@ class CompetitionServiceTest {
 
     @Test
     void endCompetition_valid_setsFinishedStatus() {
-        Competition competition = competitionWith(CompetitionStatus.ON_GOING, RegistrationStatus.EXPIRED);
+        Competition competition = competitionWith(CompetitionStatus.ONGOING, RegistrationStatus.EXPIRED);
 
         competitionService.endCompetition(competition);
 

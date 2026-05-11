@@ -23,7 +23,7 @@ interface Page<T> {
 export class CompetitionService {
   static async getCompetitions(page = 0, size = 9): Promise<Page<CompetitionDTO>> {
     const { data } = await api.get<Page<CompetitionDTO>>('/competitions', {
-      params: { page, size },
+      params: { page, size, sort: 'startingDate,desc' },
     })
     return data
   }

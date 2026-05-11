@@ -9,7 +9,6 @@ export const COMPETITION_STATUS_LABELS: Record<CompetitionStatus, string> = {
 
 export const REGISTRATION_STATUS_LABELS: Record<RegistrationStatus, string> = {
   UNAVAILABLE: 'Sin inscripciones',
-  SCHEDULED:   'Inscripciones programadas',
   AVAILABLE:   'Inscripciones abiertas',
   EXPIRED:     'Inscripciones cerradas',
   CANCELED:    'Inscripciones canceladas',

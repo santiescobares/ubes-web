@@ -58,7 +58,6 @@ export type CompetitionStatus = (typeof CompetitionStatus)[keyof typeof Competit
 
 export const RegistrationStatus = {
   UNAVAILABLE: 'UNAVAILABLE',
-  SCHEDULED: 'SCHEDULED',
   AVAILABLE: 'AVAILABLE',
   EXPIRED: 'EXPIRED',
   CANCELED: 'CANCELED',

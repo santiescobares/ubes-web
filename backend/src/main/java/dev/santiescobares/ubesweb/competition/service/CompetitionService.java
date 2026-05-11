@@ -202,7 +202,7 @@ public class CompetitionService {
 
         competition.setRegistrationStartingDate(startingDate);
         competition.setRegistrationEndingDate(endingDate);
-        competition.setRegistrationStatus(RegistrationStatus.SCHEDULED);
+        competition.setRegistrationStatus(RegistrationStatus.UNAVAILABLE);
 
         eventPublisher.publishEvent(new CompetitionUpdateEvent(RequestContextHolder.getCurrentSession().userId(), competition));
 
@@ -242,7 +242,7 @@ public class CompetitionService {
     public void startCompetition(Long id) {
         Competition competition = getById(id);
 
-        if (competition.getStatus() == CompetitionStatus.ON_GOING) {
+        if (competition.getStatus() == CompetitionStatus.ONGOING) {
             throw new InvalidOperationException("Competition is already on going");
         }
 
@@ -250,14 +250,14 @@ public class CompetitionService {
             closeCompetitionRegistration(competition, false);
         }
 
-        competition.setStatus(CompetitionStatus.ON_GOING);
+        competition.setStatus(CompetitionStatus.ONGOING);
 
         eventPublisher.publishEvent(new CompetitionUpdateEvent(RequestContextHolder.getCurrentSession().userId(), competition));
     }
 
     @Transactional
     public void endCompetition(Competition competition) {
-        if (competition.getStatus() != CompetitionStatus.ON_GOING) {
+        if (competition.getStatus() != CompetitionStatus.ONGOING) {
             throw new InvalidOperationException("Competition is not on going");
         }
 

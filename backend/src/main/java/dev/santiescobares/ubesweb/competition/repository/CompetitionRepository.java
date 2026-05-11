@@ -26,7 +26,7 @@ public interface CompetitionRepository extends JpaRepository<Competition, Long> 
             """)
     Page<Competition> findAllOrdered(Pageable pageable);
 
-    List<Competition> findAllByRegistrationStatusAndRegistrationStartingDateBefore(
+    List<Competition> findAllByRegistrationStatusAndRegistrationStartingDateIsNotNullAndRegistrationStartingDateBefore(
             RegistrationStatus registrationStatus, LocalDateTime now);
 
     List<Competition> findAllByRegistrationStatusAndRegistrationEndingDateBefore(

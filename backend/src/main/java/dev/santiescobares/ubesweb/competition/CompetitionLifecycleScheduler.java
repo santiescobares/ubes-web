@@ -27,7 +27,7 @@ public class CompetitionLifecycleScheduler {
         LocalDateTime now = LocalDateTime.now();
 
         competitionRepository
-                .findAllByRegistrationStatusAndRegistrationStartingDateBefore(RegistrationStatus.SCHEDULED, now)
+                .findAllByRegistrationStatusAndRegistrationStartingDateIsNotNullAndRegistrationStartingDateBefore(RegistrationStatus.UNAVAILABLE, now)
                 .forEach(c -> {
                     try { competitionService.openCompetitionRegistration(c.getId()); }
                     catch (Exception e) { log.error("Error opening registration for competition {}: {}", c.getId(), e.getMessage()); }
@@ -48,7 +48,7 @@ public class CompetitionLifecycleScheduler {
                 });
 
         competitionRepository
-                .findAllByStatusAndEndingDateBefore(CompetitionStatus.ON_GOING, now)
+                .findAllByStatusAndEndingDateBefore(CompetitionStatus.ONGOING, now)
                 .forEach(c -> {
                     try { competitionService.endCompetition(c); }
                     catch (Exception e) { log.error("Error ending competition {}: {}", c.getId(), e.getMessage()); }

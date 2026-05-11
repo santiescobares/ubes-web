@@ -43,6 +43,7 @@ function competitionToFormState(c: CompetitionDTO): CompetitionFormState {
     locationName: c.location?.name ?? '',
     minParticipants: c.minParticipants,
     maxParticipants: c.maxParticipants,
+    maxCoaches: c.maxCoaches,
     requiresShirtNumbers: c.requiresShirtNumbers,
     requiresMedicalCertificates: c.requiresMedicalCertificates,
     registrationStartingDate: toDatetimeLocal(c.registrationStartingDate),
@@ -93,6 +94,7 @@ export default function CompetitionDetailPage() {
 
   const [formValue, setFormValue] = useState<CompetitionFormState>(COMPETITION_FORM_INITIAL)
   const [bannerFile, setBannerFile] = useState<File | null>(null)
+  const [regulationFile, setRegulationFile] = useState<File | null>(null)
   const [removeBanner, setRemoveBanner] = useState(false)
   const [saveLoading, setSaveLoading] = useState(false)
   const formInitialized = useRef(false)
@@ -316,6 +318,8 @@ async function handleSave() {
           errors={formErrors}
           bannerFile={bannerFile}
           setBannerFile={setBannerFile}
+          regulationFile={regulationFile}
+          setRegulationFile={setRegulationFile}
           disabled={formDisabled}
           showRegistrationDates
           existingBannerURL={competition.bannerURL ?? undefined}
@@ -625,13 +629,11 @@ function LifecycleActions({ competition, canExecutive, loading, onAction, compet
   const buttons: LifecycleButton[] = []
 
   if (status === CompetitionStatus.SCHEDULED) {
-    if (registrationStatus === RegistrationStatus.UNAVAILABLE || registrationStatus === RegistrationStatus.SCHEDULED) {
+    if (registrationStatus === RegistrationStatus.UNAVAILABLE) {
       buttons.push({
         label: 'Abrir inscripciones',
         successMsg: 'Inscripciones abiertas.',
-        confirmMsg: registrationStatus === RegistrationStatus.SCHEDULED
-          ? '¿Deseas abrir las inscripciones anticipadamente? Las fechas de apertura automática serán ignoradas.'
-          : '¿Deseas abrir las inscripciones de esta competencia?',
+        confirmMsg: '¿Deseas abrir las inscripciones de esta competencia?',
         action: () => CompetitionService.openRegistration(competitionId),
       })
     }
