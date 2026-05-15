@@ -24,7 +24,7 @@ function AppInit() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route element={<ProtectedRoute />}>
-        <Route path="/panel" element={<PanelLayout />}>
+        <Route path="/" element={<PanelLayout />}>
           <Route index element={<DashboardPage />} />
           <Route path="competencias" element={<CompetenciasPage />} />
           <Route path="competencias/:id" element={<CompetitionDetailPage />} />

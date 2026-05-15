@@ -1,55 +1,88 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, SlidersHorizontal, Plus, Trophy } from 'lucide-react'
-import { CompetitionService } from '@/services/competition.service'
+import { Search, Plus, Trophy } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { hasCompetitionAccess } from '@/lib/roleUtils'
+import { useDebounce } from '@/hooks/useDebounce'
+import CompetitionService from '@/services/competitionService'
 import CompetitionCard from '@/components/competitions/CompetitionCard'
 import CreateCompetitionModal from '@/components/competitions/CreateCompetitionModal'
+import FilterDropdown, { type SortField, type SortDirection } from '@/components/ui/FilterDropdown'
+import Pagination from '@/components/ui/Pagination'
 import type { CompetitionDTO } from '@ubes/types'
 
-const PAGE_SIZE = 9
+const PAGE_SIZE = 16
 
 export default function CompetenciasPage() {
   const navigate = useNavigate()
   const user = useAuthStore(s => s.user)
+  const canCreate = user ? hasCompetitionAccess(user.role) : false
 
   const [competitions, setCompetitions] = useState<CompetitionDTO[]>([])
-  const [loading, setLoading] = useState(true)
+  const [initialLoad, setInitialLoad] = useState(true)
+  const [fetching, setFetching] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [search, setSearch] = useState('')
+  const [searchInput, setSearchInput] = useState('')
+  const [sort, setSort] = useState<SortField>('startingDate')
+  const [direction, setDirection] = useState<SortDirection>('desc')
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
   const [showCreate, setShowCreate] = useState(false)
+  const [fetchKey, setFetchKey] = useState(0)
 
-  const canCreate = user ? hasCompetitionAccess(user.role) : false
+  const debouncedSearch = useDebounce(searchInput, 300)
 
-  async function loadCompetitions(p: number) {
-    setLoading(true)
-    setError(null)
-    try {
-      const result = await CompetitionService.getCompetitions(p, PAGE_SIZE)
-      setCompetitions(result.content)
-      setTotalPages(result.totalPages)
-    } catch {
-      setError('No se pudieron cargar las competencias. Intentá de nuevo.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => { loadCompetitions(page) }, [page])
-
-  const filtered = useMemo(() => {
-    if (!search.trim()) return competitions
-    const q = search.toLowerCase()
-    return competitions.filter(c => c.name.toLowerCase().includes(q))
-  }, [competitions, search])
-
-  function handleCreated() {
-    setShowCreate(false)
-    loadCompetitions(0)
+  useEffect(() => {
     setPage(0)
+  }, [debouncedSearch, sort, direction])
+
+  useEffect(() => {
+    let cancelled = false
+    setFetching(true)
+    setError(null)
+
+    const trimmed = debouncedSearch.trim()
+    const params: Parameters<typeof CompetitionService.list>[0] = {
+      page,
+      size: PAGE_SIZE,
+      sort,
+      direction,
+    }
+    if (trimmed) {
+      if (/^\d+$/.test(trimmed)) {
+        params.id = Number(trimmed)
+      } else {
+        params.name = trimmed
+      }
+    }
+
+    CompetitionService.list(params)
+      .then(result => {
+        if (!cancelled) {
+          setCompetitions(result.content)
+          setTotalPages(result.totalPages)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setError('No se pudieron cargar las competencias. Intentá de nuevo.')
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setFetching(false)
+          setInitialLoad(false)
+        }
+      })
+
+    return () => { cancelled = true }
+  }, [debouncedSearch, sort, direction, page, fetchKey])
+
+  function handleCreated(_newCompetition: CompetitionDTO) {
+    setShowCreate(false)
+    setSearchInput('')
+    setSort('startingDate')
+    setDirection('desc')
+    setPage(0)
+    setFetchKey(k => k + 1)
   }
 
   return (
@@ -62,25 +95,25 @@ export default function CompetenciasPage() {
             <p className="page-sub">Gestión de competencias intercolegiales</p>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {/* Barra de búsqueda */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <div className="search-bar">
               <Search size={13} className="search-bar-icon" />
               <input
                 className="search-bar-input"
                 type="text"
-                placeholder="Buscar competencia..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
+                placeholder="Buscar por nombre o ID..."
+                value={searchInput}
+                onChange={e => setSearchInput(e.target.value)}
               />
             </div>
 
-            {/* Filtros (sin lógica — etapa futura) */}
-            <button className="btn btn-secondary" style={{ padding: '7px 10px' }} title="Filtros">
-              <SlidersHorizontal size={14} />
-            </button>
+            <FilterDropdown
+              sort={sort}
+              direction={direction}
+              onSortChange={setSort}
+              onDirectionChange={setDirection}
+            />
 
-            {/* Crear */}
             {canCreate && (
               <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
                 <Plus size={14} />
@@ -90,10 +123,10 @@ export default function CompetenciasPage() {
           </div>
         </div>
 
-        {/* Contenido */}
+        {/* Content */}
         <div style={{ marginTop: 24 }}>
-          {loading ? (
-            <div className="competitions-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
+          {initialLoad ? (
+            <div className="competitions-grid">
               {Array.from({ length: PAGE_SIZE }).map((_, i) => (
                 <div key={i} className="competition-card-skeleton" />
               ))}
@@ -102,29 +135,29 @@ export default function CompetenciasPage() {
             <div className="empty-state">
               <Trophy size={36} className="empty-state-icon" />
               <p className="empty-state-text">{error}</p>
-              <button className="btn btn-secondary" onClick={() => loadCompetitions(page)}>
+              <button className="btn btn-secondary" onClick={() => setFetchKey(k => k + 1)}>
                 Reintentar
               </button>
             </div>
-          ) : filtered.length === 0 ? (
+          ) : competitions.length === 0 ? (
             <div className="empty-state">
               <Trophy size={36} className="empty-state-icon" />
               <p className="empty-state-text">
-                {search ? 'Sin resultados para tu búsqueda.' : 'No hay competencias registradas.'}
+                {searchInput ? 'Sin resultados para tu búsqueda.' : 'No hay competencias registradas.'}
               </p>
-              {!search && canCreate && (
+              {!searchInput && canCreate && (
                 <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
                   <Plus size={13} /> Crear primera competencia
                 </button>
               )}
             </div>
           ) : (
-            <div className="competitions-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
-              {filtered.map((c, i) => (
+            <div className="competitions-grid" style={{ opacity: fetching ? 0.5 : 1, transition: 'opacity 0.15s' }}>
+              {competitions.map((c, i) => (
                 <div key={c.id} className={`fade-up${i < 4 ? ` d${i + 1}` : ''}`}>
                   <CompetitionCard
                     competition={c}
-                    onClick={() => navigate(`/panel/competencias/${c.id}`)}
+                    onClick={() => navigate(`/competencias/${c.id}`)}
                   />
                 </div>
               ))}
@@ -132,21 +165,19 @@ export default function CompetenciasPage() {
           )}
         </div>
 
-        {/* Paginación */}
-        {!loading && !error && totalPages > 1 && (
-          <div className="pagination">
-            <button className="pagination-btn" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
-              ← Anterior
-            </button>
-            <span className="pagination-info">{page + 1} / {totalPages}</span>
-            <button className="pagination-btn" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>
-              Siguiente →
-            </button>
+        {/* Pagination */}
+        {!initialLoad && !error && totalPages > 1 && (
+          <div style={{ marginTop: 24, display: 'flex', justifyContent: 'center' }}>
+            <Pagination
+              current={page + 1}
+              total={totalPages}
+              onChange={p => setPage(p - 1)}
+            />
           </div>
         )}
       </div>
 
-      {/* Modal de creación — fuera del fade-up para que position:fixed funcione */}
+      {/* Modal outside fade-up so position:fixed works */}
       {showCreate && (
         <CreateCompetitionModal
           onClose={() => setShowCreate(false)}
