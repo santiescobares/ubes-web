@@ -10,7 +10,6 @@ import dev.santiescobares.ubesweb.suggestion.dto.SuggestionDTO;
 import dev.santiescobares.ubesweb.suggestion.event.SuggestionCreateEvent;
 import dev.santiescobares.ubesweb.suggestion.event.SuggestionUpdateEvent;
 import dev.santiescobares.ubesweb.suggestion.event.SuggestionVoteEvent;
-import dev.santiescobares.ubesweb.suggestion.id.SuggestionVoteId;
 import dev.santiescobares.ubesweb.suggestion.repository.SuggestionRepository;
 import dev.santiescobares.ubesweb.suggestion.repository.SuggestionVoteRepository;
 import dev.santiescobares.ubesweb.user.User;
@@ -35,6 +34,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -124,7 +124,7 @@ class SuggestionServiceTest {
         suggestion.setCreatedBy(author);
 
         when(suggestionRepository.findById(1L)).thenReturn(Optional.of(suggestion));
-        when(suggestionVoteRepository.existsById(any(SuggestionVoteId.class))).thenReturn(true);
+        when(suggestionVoteRepository.existsBySuggestionIdAndVoterId(anyLong(), any(UUID.class))).thenReturn(true);
 
         assertThatThrownBy(() -> suggestionService.voteSuggestion(1L, true))
                 .isInstanceOf(InvalidOperationException.class)
@@ -143,7 +143,7 @@ class SuggestionServiceTest {
         suggestion.setCreatedBy(author);
 
         when(suggestionRepository.findById(1L)).thenReturn(Optional.of(suggestion));
-        when(suggestionVoteRepository.existsById(any(SuggestionVoteId.class))).thenReturn(false);
+        when(suggestionVoteRepository.existsBySuggestionIdAndVoterId(anyLong(), any(UUID.class))).thenReturn(false);
         when(userService.getCurrentUser()).thenReturn(voter);
 
         suggestionService.voteSuggestion(1L, true);
@@ -273,6 +273,26 @@ class SuggestionServiceTest {
         Page<SuggestionDTO> result = suggestionService.getSuggestionDTOs(pageable);
 
         assertThat(result.getContent().get(0).createdBy()).isNull();
+    }
+
+    @Test
+    void getSuggestionDTOs_withAnonymizedSuggestion_asExecutive_showsAuthor() {
+        Suggestion suggestion = new Suggestion();
+        suggestion.setId(4L);
+        suggestion.setAnonymized(true);
+        PageRequest pageable = PageRequest.of(0, 10);
+        Page<Suggestion> page = new PageImpl<>(List.of(suggestion));
+
+        dev.santiescobares.ubesweb.user.dto.UserSnapshotDTO author = mock(dev.santiescobares.ubesweb.user.dto.UserSnapshotDTO.class);
+        SuggestionDTO fullDTO = new SuggestionDTO(4L, null, null, author, "contenido", 0, 0);
+
+        when(suggestionRepository.findAll(pageable)).thenReturn(page);
+        when(suggestionVoteRepository.getVoteStatsBySuggestionIds(List.of(4L))).thenReturn(List.of());
+        when(suggestionMapper.toDTO(suggestion, 0, 0)).thenReturn(fullDTO);
+
+        Page<SuggestionDTO> result = suggestionService.getSuggestionDTOs(pageable);
+
+        assertThat(result.getContent().get(0).createdBy()).isEqualTo(author);
     }
 
     @Test
