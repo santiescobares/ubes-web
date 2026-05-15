@@ -1,119 +1,172 @@
-import { useEffect, useState } from 'react'
-import { X } from 'lucide-react'
+import { useState } from 'react'
+import { X, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { CompetitionService } from '@/services/competition.service'
-import CompetitionForm, { COMPETITION_FORM_INITIAL } from './CompetitionForm'
-import type { CompetitionFormState } from './CompetitionForm'
-import type { CompetitionCreateDTO } from '@ubes/types'
-
-const BANNER_MAX_BYTES = 10 * 1024 * 1024
+import CompetitionForm, { type CompetitionFormErrors, type CompetitionFormState, initialCompetitionFormState } from './CompetitionForm'
+import CompetitionService from '@/services/competitionService'
+import type { CompetitionDTO } from '@ubes/types'
 
 interface Props {
   onClose: () => void
-  onCreated: () => void
+  onCreated: (competition: CompetitionDTO) => void
+}
+
+function validate(form: CompetitionFormState): CompetitionFormErrors {
+  const errors: CompetitionFormErrors = {}
+  const now = new Date()
+  const bufferMs = 60_000 // 1 min buffer for @Future
+
+  if (!form.name.trim()) {
+    errors.name = 'El nombre es obligatorio'
+  } else if (form.name.trim().length > 50) {
+    errors.name = 'El nombre no puede superar los 50 caracteres'
+  }
+
+  if (form.description.length > 1000) {
+    errors.description = 'La descripción no puede superar los 1000 caracteres'
+  }
+
+  if (!form.startingDate) {
+    errors.startingDate = 'La fecha de inicio es obligatoria'
+  } else {
+    const start = new Date(form.startingDate)
+    if (start.getTime() <= now.getTime() + bufferMs) {
+      errors.startingDate = 'La fecha de inicio debe ser futura'
+    }
+  }
+
+  if (!form.endingDate) {
+    errors.endingDate = 'La fecha de fin es obligatoria'
+  } else {
+    const end = new Date(form.endingDate)
+    if (end.getTime() <= now.getTime() + bufferMs) {
+      errors.endingDate = 'La fecha de fin debe ser futura'
+    } else if (form.startingDate) {
+      const start = new Date(form.startingDate)
+      if (end <= start) {
+        errors.endingDate = 'La fecha de fin debe ser posterior a la de inicio'
+      }
+    }
+  }
+
+  if (form.locationName.trim().length > 100) {
+    errors.locationName = 'El nombre del lugar no puede superar los 100 caracteres'
+  }
+
+  if (form.latitude != null && (form.latitude < -90 || form.latitude > 90)) {
+    errors.latitude = 'Latitud inválida (debe estar entre -90 y 90)'
+  }
+  if (form.longitude != null && (form.longitude < -180 || form.longitude > 180)) {
+    errors.longitude = 'Longitud inválida (debe estar entre -180 y 180)'
+  }
+
+  if (form.minParticipants < 0 || form.minParticipants > 99) {
+    errors.minParticipants = 'Debe estar entre 0 y 99'
+  }
+
+  if (form.maxParticipants < 1 || form.maxParticipants > 99) {
+    errors.maxParticipants = 'Debe estar entre 1 y 99'
+  } else if (form.maxParticipants < form.minParticipants) {
+    errors.maxParticipants = 'El máximo debe ser ≥ al mínimo'
+  }
+
+  if (form.maxCoaches < 0 || form.maxCoaches > 99) {
+    errors.maxCoaches = 'Debe estar entre 0 y 99'
+  }
+
+  return errors
+}
+
+function hasErrors(errors: CompetitionFormErrors): boolean {
+  return Object.keys(errors).length > 0
 }
 
 export default function CreateCompetitionModal({ onClose, onCreated }: Props) {
-  const [form, setForm] = useState<CompetitionFormState>(COMPETITION_FORM_INITIAL)
-  const [bannerFile, setBannerFile] = useState<File | null>(null)
-  const [regulationFile, setRegulationFile] = useState<File | null>(null)
-  const [errors, setErrors] = useState<Partial<Record<keyof CompetitionFormState, string>>>({})
+  const [form, setForm] = useState<CompetitionFormState>(initialCompetitionFormState)
+  const [errors, setErrors] = useState<CompetitionFormErrors>({})
   const [submitting, setSubmitting] = useState(false)
 
-  useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape' && !submitting) onClose()
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    const errs = validate(form)
+    if (hasErrors(errs)) {
+      setErrors(errs)
+      return
     }
-    document.addEventListener('keydown', onKeyDown)
-    return () => document.removeEventListener('keydown', onKeyDown)
-  }, [submitting, onClose])
-
-  function validate(): boolean {
-    const next: typeof errors = {}
-    if (!form.name.trim()) next.name = 'El nombre es obligatorio.'
-    if (form.name.trim().length > 50) next.name = 'El nombre no puede superar 50 caracteres.'
-    if (form.description.length > 1000) next.description = 'La descripción no puede superar 1000 caracteres.'
-    if (!form.startingDate) {
-      next.startingDate = 'La fecha de inicio es obligatoria.'
-    } else if (new Date(form.startingDate) <= new Date()) {
-      next.startingDate = 'La fecha de inicio debe ser en el futuro.'
-    }
-    if (form.endingDate && form.startingDate && form.endingDate <= form.startingDate)
-      next.endingDate = 'La fecha de fin debe ser posterior a la de inicio.'
-    if (!form.locationName.trim()) next.locationName = 'El lugar es obligatorio.'
-    if (form.minParticipants < 1) next.minParticipants = 'Mínimo 1.'
-    if (form.maxParticipants < 2) next.maxParticipants = 'Mínimo 2.'
-    if (form.maxParticipants <= form.minParticipants)
-      next.maxParticipants = 'Debe ser mayor al mínimo de participantes.'
-    if (bannerFile && bannerFile.size > BANNER_MAX_BYTES)
-      next.name = 'El banner no puede superar 10 MB.'
-    setErrors(next)
-    return Object.keys(next).length === 0
-  }
-
-  async function handleSubmit() {
-    if (!validate()) return
+    setErrors({})
     setSubmitting(true)
     try {
-      const dto: CompetitionCreateDTO = {
+      const dto = {
         name: form.name.trim(),
-        description: form.description.trim(),
+        description: form.description,
         startingDate: form.startingDate,
-        ...(form.endingDate ? { endingDate: form.endingDate } : {}),
-        location: { name: form.locationName.trim(), latitude: null, longitude: null },
+        endingDate: form.endingDate,
+        location: form.locationName.trim() ? {
+          name: form.locationName.trim(),
+          latitude: form.latitude ?? null,
+          longitude: form.longitude ?? null,
+        } : undefined,
         minParticipants: form.minParticipants,
         maxParticipants: form.maxParticipants,
         maxCoaches: form.maxCoaches,
         requiresShirtNumbers: form.requiresShirtNumbers,
         requiresMedicalCertificates: form.requiresMedicalCertificates,
       }
-      await CompetitionService.createCompetition(
-        dto,
-        bannerFile ?? undefined,
-        regulationFile ?? undefined,
-      )
+      const created = await CompetitionService.create(dto, form.bannerFile, form.regulationFile)
       toast.success('Competencia creada')
-      onCreated()
-    } catch {
-      toast.error('No se pudo crear la competencia. Revisá los datos e intentá de nuevo.')
+      onCreated(created)
+      onClose()
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+      toast.error(msg ?? 'Error al crear la competencia')
     } finally {
       setSubmitting(false)
     }
   }
 
-  function handleBackdropClick(e: React.MouseEvent<HTMLDivElement>) {
-    if (e.target === e.currentTarget && !submitting) onClose()
-  }
-
   return (
-    <div className="modal-backdrop" onClick={handleBackdropClick}>
-      <div className="modal-box modal-box-wide">
-        <div className="modal-header">
-          <span className="modal-title">Nueva Competencia</span>
-          <button className="modal-close-btn" onClick={onClose} disabled={submitting}>
-            <X size={16} />
-          </button>
-        </div>
+    <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal-box modal-box-wide modal-form-container">
+        <form onSubmit={handleSubmit} noValidate>
+          {/* Header sticky */}
+          <div className="modal-form-header">
+            <span className="modal-title">Crear Competencia</span>
+            <button type="button" className="modal-close-btn" onClick={onClose} disabled={submitting}>
+              <X size={14} />
+            </button>
+          </div>
 
-        <CompetitionForm
-          value={form}
-          onChange={setForm}
-          errors={errors}
-          bannerFile={bannerFile}
-          setBannerFile={setBannerFile}
-          regulationFile={regulationFile}
-          setRegulationFile={setRegulationFile}
-          disabled={submitting}
-        />
+          {/* Scrollable body */}
+          <div className="modal-form-scroll">
+            <CompetitionForm
+              value={form}
+              onChange={setForm}
+              errors={errors}
+              mode="create"
+              disabled={submitting}
+            />
+          </div>
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 6 }}>
-          <button className="btn btn-secondary" onClick={onClose} disabled={submitting}>
-            Cancelar
-          </button>
-          <button className="btn btn-primary" onClick={handleSubmit} disabled={submitting}>
-            {submitting ? 'Creando...' : 'Crear competencia'}
-          </button>
-        </div>
+          {/* Footer sticky */}
+          <div className="modal-form-footer">
+            <button type="button" className="btn btn-ghost" onClick={onClose} disabled={submitting}>
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={submitting}
+            >
+              {submitting ? (
+                <>
+                  <Loader2 size={13} className="spin-icon" />
+                  Creando...
+                </>
+              ) : (
+                'Crear Competencia'
+              )}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   )
