@@ -11,7 +11,6 @@ import dev.santiescobares.ubesweb.suggestion.dto.SuggestionDTO;
 import dev.santiescobares.ubesweb.suggestion.event.SuggestionCreateEvent;
 import dev.santiescobares.ubesweb.suggestion.event.SuggestionUpdateEvent;
 import dev.santiescobares.ubesweb.suggestion.event.SuggestionVoteEvent;
-import dev.santiescobares.ubesweb.suggestion.id.SuggestionVoteId;
 import dev.santiescobares.ubesweb.suggestion.repository.SuggestionRepository;
 import dev.santiescobares.ubesweb.suggestion.repository.SuggestionVoteRepository;
 import dev.santiescobares.ubesweb.user.UserService;
@@ -62,13 +61,11 @@ public class SuggestionService {
             throw new InvalidOperationException("You can't vote your own suggestion");
         }
 
-        SuggestionVoteId voteId = new SuggestionVoteId(id, RequestContextHolder.getCurrentSession().userId());
-        if (suggestionVoteRepository.existsById(voteId)) {
+        if (suggestionVoteRepository.existsBySuggestionIdAndVoterId(id, RequestContextHolder.getCurrentSession().userId())) {
             throw new InvalidOperationException("You already voted on that suggestion");
         }
 
         SuggestionVote vote = new SuggestionVote();
-        vote.setId(voteId);
         vote.setSuggestion(suggestion);
         vote.setVoter(userService.getCurrentUser());
         vote.setTimestamp(Instant.now());

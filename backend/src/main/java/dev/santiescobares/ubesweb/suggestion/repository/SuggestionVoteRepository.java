@@ -1,14 +1,16 @@
 package dev.santiescobares.ubesweb.suggestion.repository;
 
 import dev.santiescobares.ubesweb.suggestion.SuggestionVote;
-import dev.santiescobares.ubesweb.suggestion.id.SuggestionVoteId;
 import io.lettuce.core.dynamic.annotation.Param;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
+import java.util.UUID;
 
-public interface SuggestionVoteRepository extends JpaRepository<SuggestionVote, SuggestionVoteId> {
+public interface SuggestionVoteRepository extends JpaRepository<SuggestionVote, Long> {
+
+    boolean existsBySuggestionIdAndVoterId(Long suggestionId, UUID voterId);
 
     @Query("SELECT v.suggestion.id, COUNT(v), COUNT(CASE WHEN v.inFavor = true THEN 1 END) " +
             "FROM SuggestionVote v " +
