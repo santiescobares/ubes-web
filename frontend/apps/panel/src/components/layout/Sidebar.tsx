@@ -10,12 +10,12 @@ import {
 import logoImg from '@/assets/logo.png'
 
 const navItems = [
-  { to: '/panel', label: 'Panel de Control', icon: LayoutDashboard, end: true },
-  { to: '/panel/competencias', label: 'Competencias', icon: Trophy },
-  { to: '/panel/eventos', label: 'Eventos', icon: Calendar },
-  { to: '/panel/anuncios', label: 'Anuncios', icon: Bell },
-  { to: '/panel/documentos', label: 'Documentos', icon: FileText },
-  { to: '/panel/usuarios', label: 'Usuarios', icon: Users },
+  { to: '/', label: 'Panel de Control', icon: LayoutDashboard, end: true },
+  { to: '/competencias', label: 'Competencias', icon: Trophy },
+  { to: '/eventos', label: 'Eventos', icon: Calendar },
+  { to: '/anuncios', label: 'Anuncios', icon: Bell },
+  { to: '/documentos', label: 'Documentos', icon: FileText },
+  { to: '/usuarios', label: 'Usuarios', icon: Users },
 ]
 
 export default function Sidebar() {

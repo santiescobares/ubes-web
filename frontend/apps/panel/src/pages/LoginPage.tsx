@@ -7,13 +7,13 @@ export default function LoginPage() {
   const { isAuthenticated, isLoading, login } = useAuthStore()
   const navigate = useNavigate()
 
-  if (isAuthenticated) return <Navigate to="/panel" replace />
+  if (isAuthenticated) return <Navigate to="/" replace />
 
   const handleSuccess = async (credentialResponse: { credential?: string }) => {
     if (!credentialResponse.credential) return
     try {
       await login(credentialResponse.credential)
-      navigate('/panel', { replace: true })
+      navigate('/', { replace: true })
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error al iniciar sesión.')
     }
@@ -32,7 +32,6 @@ export default function LoginPage() {
             shape="rectangular"
             theme="outline"
             size="large"
-            locale="es"
             useOneTap={false}
           />
         </div>

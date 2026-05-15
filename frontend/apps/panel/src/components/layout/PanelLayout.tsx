@@ -1,8 +1,9 @@
 import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import Topbar from './Topbar'
+import { BreadcrumbProvider } from '@/context/BreadcrumbContext'
 
-export default function PanelLayout() {
+function PanelLayoutInner() {
   return (
     <div className="panel-shell">
       <div className="grid-bg" />
@@ -12,5 +13,13 @@ export default function PanelLayout() {
         <Outlet />
       </div>
     </div>
+  )
+}
+
+export default function PanelLayout() {
+  return (
+    <BreadcrumbProvider>
+      <PanelLayoutInner />
+    </BreadcrumbProvider>
   )
 }
