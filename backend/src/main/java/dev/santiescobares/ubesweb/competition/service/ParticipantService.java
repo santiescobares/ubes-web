@@ -245,6 +245,26 @@ public class ParticipantService {
                 .map(participantMapper::toDTO);
     }
 
+    @Transactional(readOnly = true)
+    public Page<ParticipantDTO> getParticipantDTOs(Long competitionId, Long id, String search, Pageable pageable) {
+        Long resolvedId = id;
+        if (resolvedId == null && search != null && search.matches("^\\d+$")) {
+            resolvedId = Long.parseLong(search);
+        }
+        return participantRepository.findAllByFilters(competitionId, resolvedId, search, pageable)
+                .map(participantMapper::toDTO);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ParticipantDTO> getParticipantDTOs(Long competitionId, Long id, String search, ParticipantRole role, Pageable pageable) {
+        Long resolvedId = id;
+        if (resolvedId == null && search != null && search.matches("^\\d+$")) {
+            resolvedId = Long.parseLong(search);
+        }
+        return participantRepository.findAllByFiltersAndRole(competitionId, resolvedId, search, role, pageable)
+                .map(participantMapper::toDTO);
+    }
+
     public Participant getById(Long id) {
         return participantRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(ResourceType.COMPETITION_PARTICIPANT));

@@ -4,6 +4,7 @@ import dev.santiescobares.ubesweb.Global;
 import dev.santiescobares.ubesweb.competition.dto.participant.ParticipantCreateDTO;
 import dev.santiescobares.ubesweb.competition.dto.participant.ParticipantDTO;
 import dev.santiescobares.ubesweb.competition.dto.participant.ParticipantUpdateDTO;
+import dev.santiescobares.ubesweb.competition.enums.ParticipantRole;
 import dev.santiescobares.ubesweb.competition.service.ParticipantService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -74,8 +75,14 @@ public class ParticipantController {
     @GetMapping
     public ResponseEntity<Page<ParticipantDTO>> getAll(
             @PathVariable Long competitionId,
+            @RequestParam(required = false) Long id,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) ParticipantRole role,
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
+        if (id != null || search != null || role != null) {
+            return ResponseEntity.ok(participantService.getParticipantDTOs(competitionId, id, search, role, pageable));
+        }
         return ResponseEntity.ok(participantService.getParticipantDTOs(competitionId, pageable));
     }
 }
