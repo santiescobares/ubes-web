@@ -48,6 +48,8 @@ export interface CompetitionUpdateDTO {
   maxCoaches?: number
   requiresShirtNumbers?: boolean
   requiresMedicalCertificates?: boolean
+  registrationStartingDate?: string
+  registrationEndingDate?: string
 }
 
 export interface ParticipantSnapshotDTO {
@@ -103,6 +105,7 @@ export interface ResultDTO {
   name: string
   points: number
   participant: ParticipantSnapshotDTO | null
+  school: School | null
 }
 
 export interface ResultCreateDTO {
@@ -124,4 +127,17 @@ export interface ResultOrderEntry {
 
 export interface ResultReorderDTO {
   entries: ResultOrderEntry[]
+}
+
+export interface ResultBulkUpsertItem {
+  id?: string
+  positionType: ParticipantPositionType
+  positionNumber: number
+  name: string
+  participantId?: string
+  school?: School
+}
+
+export interface ResultBulkUpsertDTO {
+  items: ResultBulkUpsertItem[]
 }

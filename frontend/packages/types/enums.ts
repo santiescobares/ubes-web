@@ -50,7 +50,7 @@ export type EventType = (typeof EventType)[keyof typeof EventType]
 
 export const CompetitionStatus = {
   SCHEDULED: 'SCHEDULED',
-  ON_GOING: 'ON_GOING',
+  ONGOING: 'ONGOING',
   FINISHED: 'FINISHED',
   CANCELED: 'CANCELED',
 } as const
