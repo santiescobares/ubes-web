@@ -1,0 +1,34 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/testdb
+    username: test
+    password: test
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  mail:
+    host: localhost
+    port: 1025
+    username: test
+    password: test
+
+  security:
+    jwt:
+      secret-key: dGVzdC1zZWNyZXQta2V5LXRoYXQtaXMtbG9uZy1lbm91Z2gtZm9yLUhTMjU2
+      issuer: ubes-web
+      access-expiration: 86400000
+      registration-expiration: 900000
+
+  google:
+    client-id: test-client-id
+
+  r2:
+    access-key: test-access-key
+    secret-key: test-secret-key
+    endpoint: https://test.r2.endpoint
+    buckets:
+      private: test-private-bucket
+      public: test-public-bucket
