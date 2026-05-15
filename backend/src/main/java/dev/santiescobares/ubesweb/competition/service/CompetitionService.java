@@ -142,6 +142,26 @@ public class CompetitionService {
             throw new IllegalArgumentException("Invalid competition participant amounts");
         }
 
+        if (dto.registrationStartingDate() != null || dto.registrationEndingDate() != null) {
+            LocalDateTime finalRegStart = dto.registrationStartingDate() != null
+                    ? dto.registrationStartingDate() : competition.getRegistrationStartingDate();
+            LocalDateTime finalRegEnd = dto.registrationEndingDate() != null
+                    ? dto.registrationEndingDate() : competition.getRegistrationEndingDate();
+
+            if (finalRegStart == null || finalRegEnd == null) {
+                throw new IllegalArgumentException("Both registration dates must be provided together");
+            }
+            if (!finalRegEnd.isAfter(finalRegStart)) {
+                throw new IllegalArgumentException("Registration ending date must be after registration starting date");
+            }
+            if (!finalRegEnd.isBefore(finalStartingDate)) {
+                throw new IllegalArgumentException("Registration must close before the competition starts");
+            }
+
+            competition.setRegistrationStartingDate(finalRegStart);
+            competition.setRegistrationEndingDate(finalRegEnd);
+        }
+
         competitionMapper.updateFromDTO(competition, dto);
 
         if (removeBanner != null && removeBanner) {
@@ -307,8 +327,8 @@ public class CompetitionService {
     }
 
     @Transactional(readOnly = true)
-    public Page<CompetitionDTO> getCompetitionDTOs(Pageable pageable) {
-        return competitionRepository.findAll(pageable).map(competitionMapper::toDTO);
+    public Page<CompetitionDTO> getCompetitionDTOs(Long id, String name, Pageable pageable) {
+        return competitionRepository.findAllByFilters(id, name, pageable).map(competitionMapper::toDTO);
     }
 
     public Competition getById(Long id) {

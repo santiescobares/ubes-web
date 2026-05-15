@@ -27,6 +27,8 @@ public record CompetitionUpdateDTO(
         @Max(value = 99, message = "Max coaches per school must be between 0 and 99")
         Integer maxCoaches,
         Boolean requiresShirtNumbers,
-        Boolean requiresMedicalCertificates
+        Boolean requiresMedicalCertificates,
+        LocalDateTime registrationStartingDate,
+        LocalDateTime registrationEndingDate
 ) {
 }

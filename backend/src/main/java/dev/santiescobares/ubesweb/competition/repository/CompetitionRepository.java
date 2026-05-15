@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -14,17 +15,12 @@ import java.util.List;
 public interface CompetitionRepository extends JpaRepository<Competition, Long> {
 
     @Query("""
-            SELECT c FROM Competition c
-            ORDER BY
-                CASE c.status
-                    WHEN 'SCHEDULED' THEN 0
-                    WHEN 'ON_GOING'  THEN 1
-                    WHEN 'FINISHED'  THEN 2
-                    WHEN 'CANCELED'  THEN 3
-                END ASC,
-                c.startingDate ASC
-            """)
-    Page<Competition> findAllOrdered(Pageable pageable);
+        SELECT c FROM Competition c
+        WHERE (:id IS NULL OR c.id = :id)
+        AND (CAST(:name AS string) IS NULL OR :name = ''
+             OR LOWER(c.name) LIKE LOWER(CONCAT('%', CAST(:name AS string), '%')))
+       """)
+    Page<Competition> findAllByFilters(@Param("id") Long id, @Param("name") String name, Pageable pageable);
 
     List<Competition> findAllByRegistrationStatusAndRegistrationStartingDateIsNotNullAndRegistrationStartingDateBefore(
             RegistrationStatus registrationStatus, LocalDateTime now);

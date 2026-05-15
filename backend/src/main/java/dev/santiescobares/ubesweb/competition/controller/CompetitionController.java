@@ -120,8 +120,10 @@ public class CompetitionController {
 
     @GetMapping
     public ResponseEntity<Page<CompetitionDTO>> getAll(
+            @RequestParam(required = false) Long id,
+            @RequestParam(required = false) String name,
             @PageableDefault(sort = "startingDate", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        return ResponseEntity.ok(competitionService.getCompetitionDTOs(pageable));
+        return ResponseEntity.ok(competitionService.getCompetitionDTOs(id, name, pageable));
     }
 }
