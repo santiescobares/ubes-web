@@ -1,37 +1,35 @@
 import api from '@/lib/axios'
-import type { ResultDTO, ResultCreateDTO, ResultUpdateDTO, ResultOrderEntry } from '@ubes/types'
-import type { ParticipantPositionType } from '@ubes/types'
+import type { ParticipantPositionType, ResultBulkUpsertDTO, ResultDTO } from '@ubes/types'
 
-const resultService = {
-  getAll(competitionId: string): Promise<ResultDTO[]> {
-    return api.get(`/competitions/${competitionId}/results`).then((r) => r.data)
-  },
+export class ResultService {
+  static async list(
+    competitionId: string | number,
+    positionType?: ParticipantPositionType,
+  ): Promise<ResultDTO[]> {
+    const url = positionType
+      ? `/competitions/${competitionId}/results/${positionType}`
+      : `/competitions/${competitionId}/results`
+    const { data } = await api.get<ResultDTO[]>(url)
+    return data
+  }
 
-  getByType(competitionId: string, type: ParticipantPositionType): Promise<ResultDTO[]> {
-    return api.get(`/competitions/${competitionId}/results/${type}`).then((r) => r.data)
-  },
+  static async bulkUpsert(
+    competitionId: string | number,
+    dto: ResultBulkUpsertDTO,
+  ): Promise<ResultDTO[]> {
+    const { data } = await api.post<ResultDTO[]>(
+      `/competitions/${competitionId}/results/bulk`,
+      dto,
+    )
+    return data
+  }
 
-  add(competitionId: string, dto: ResultCreateDTO): Promise<ResultDTO> {
-    return api.post(`/competitions/${competitionId}/results`, dto).then((r) => r.data)
-  },
-
-  update(competitionId: string, resultId: string, dto: ResultUpdateDTO): Promise<ResultDTO> {
-    return api.put(`/competitions/${competitionId}/results/${resultId}`, dto).then((r) => r.data)
-  },
-
-  delete(competitionId: string, resultId: string): Promise<void> {
-    return api.delete(`/competitions/${competitionId}/results/${resultId}`).then(() => {})
-  },
-
-  reorder(
-    competitionId: string,
-    type: ParticipantPositionType,
-    entries: ResultOrderEntry[],
+  static async remove(
+    competitionId: string | number,
+    resultId: string | number,
   ): Promise<void> {
-    return api
-      .put(`/competitions/${competitionId}/results/${type}/reorder`, { entries })
-      .then(() => {})
-  },
+    await api.delete(`/competitions/${competitionId}/results/${resultId}`)
+  }
 }
 
-export default resultService
+export default ResultService

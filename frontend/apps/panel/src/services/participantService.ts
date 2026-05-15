@@ -1,69 +1,79 @@
 import api from '@/lib/axios'
+import type { ParticipantCreateDTO, ParticipantDTO, ParticipantUpdateDTO } from '@ubes/types'
 import type { Page } from '@/lib/types'
-import type { ParticipantDTO, ParticipantCreateDTO, ParticipantUpdateDTO } from '@ubes/types'
 
-interface ParticipantListParams {
+export interface ParticipantListParams {
   page?: number
   size?: number
+  sort?: string
+  direction?: 'asc' | 'desc'
   search?: string
+  id?: number
+  role?: string
 }
 
-function buildParticipantForm(
-  body: object,
-  studentCertificateFile?: File,
-  medicalCertificateFile?: File,
+function buildParticipantFormData(
+  dto: ParticipantCreateDTO | ParticipantUpdateDTO,
+  studentFile?: File | null,
+  medicalFile?: File | null,
 ): FormData {
-  const fd = new FormData()
-  fd.append('body', new Blob([JSON.stringify(body)], { type: 'application/json' }))
-  if (studentCertificateFile) fd.append('studentCertificateFile', studentCertificateFile)
-  if (medicalCertificateFile) fd.append('medicalCertificateFile', medicalCertificateFile)
-  return fd
+  const form = new FormData()
+  form.append('body', new Blob([JSON.stringify(dto)], { type: 'application/json' }))
+  if (studentFile) form.append('studentCertificateFile', studentFile)
+  if (medicalFile) form.append('medicalCertificateFile', medicalFile)
+  return form
 }
 
-const participantService = {
-  getAll(competitionId: string, params?: ParticipantListParams): Promise<Page<ParticipantDTO>> {
-    return api.get(`/competitions/${competitionId}/participants`, { params }).then((r) => r.data)
-  },
+export class ParticipantService {
+  static async list(
+    competitionId: string | number,
+    params: ParticipantListParams = {},
+  ): Promise<Page<ParticipantDTO>> {
+    const { sort, direction, ...rest } = params
+    const queryParams: Record<string, unknown> = { ...rest }
+    if (sort) queryParams.sort = direction ? `${sort},${direction.toUpperCase()}` : sort
+    const { data } = await api.get<Page<ParticipantDTO>>(
+      `/competitions/${competitionId}/participants`,
+      { params: queryParams },
+    )
+    return data
+  }
 
-  add(
-    competitionId: string,
+  static async create(
+    competitionId: string | number,
     dto: ParticipantCreateDTO,
-    studentCertificateFile?: File,
-    medicalCertificateFile?: File,
+    studentFile?: File | null,
+    medicalFile?: File | null,
   ): Promise<ParticipantDTO> {
-    const fd = buildParticipantForm(dto, studentCertificateFile, medicalCertificateFile)
-    return api.post(`/competitions/${competitionId}/participants`, fd).then((r) => r.data)
-  },
+    const formData = buildParticipantFormData(dto, studentFile, medicalFile)
+    const { data } = await api.post<ParticipantDTO>(
+      `/competitions/${competitionId}/participants`,
+      formData,
+    )
+    return data
+  }
 
-  addBulk(
-    competitionId: string,
-    dtos: ParticipantCreateDTO[],
-    studentCertificateFiles?: File[],
-    medicalCertificateFiles?: File[],
-  ): Promise<void> {
-    const fd = new FormData()
-    fd.append('body', new Blob([JSON.stringify(dtos)], { type: 'application/json' }))
-    studentCertificateFiles?.forEach((f) => fd.append('studentCertificateFiles', f))
-    medicalCertificateFiles?.forEach((f) => fd.append('medicalCertificateFiles', f))
-    return api.post(`/competitions/${competitionId}/participants/bulk`, fd).then(() => {})
-  },
-
-  update(
-    competitionId: string,
-    participantId: string,
+  static async update(
+    competitionId: string | number,
+    participantId: string | number,
     dto: ParticipantUpdateDTO,
-    studentCertificateFile?: File,
-    medicalCertificateFile?: File,
+    studentFile?: File | null,
+    medicalFile?: File | null,
   ): Promise<ParticipantDTO> {
-    const fd = buildParticipantForm(dto, studentCertificateFile, medicalCertificateFile)
-    return api
-      .put(`/competitions/${competitionId}/participants/${participantId}`, fd)
-      .then((r) => r.data)
-  },
+    const formData = buildParticipantFormData(dto, studentFile, medicalFile)
+    const { data } = await api.put<ParticipantDTO>(
+      `/competitions/${competitionId}/participants/${participantId}`,
+      formData,
+    )
+    return data
+  }
 
-  delete(competitionId: string, participantId: string): Promise<void> {
-    return api.delete(`/competitions/${competitionId}/participants/${participantId}`).then(() => {})
-  },
+  static async remove(
+    competitionId: string | number,
+    participantId: string | number,
+  ): Promise<void> {
+    await api.delete(`/competitions/${competitionId}/participants/${participantId}`)
+  }
 }
 
-export default participantService
+export default ParticipantService

@@ -1,81 +1,94 @@
 import api from '@/lib/axios'
+import type { CompetitionCreateDTO, CompetitionDTO, CompetitionUpdateDTO } from '@ubes/types'
 import type { Page } from '@/lib/types'
-import type { CompetitionDTO, CompetitionCreateDTO, CompetitionUpdateDTO } from '@ubes/types'
 
-function buildMultipartForm(body: object, files: Record<string, File | null | undefined>): FormData {
-  const fd = new FormData()
-  fd.append('body', new Blob([JSON.stringify(body)], { type: 'application/json' }))
-  for (const [key, file] of Object.entries(files)) {
-    if (file) fd.append(key, file)
-  }
-  return fd
+export interface CompetitionListParams {
+  id?: number
+  name?: string
+  page?: number
+  size?: number
+  sort?: string
+  direction?: 'asc' | 'desc'
 }
 
-const competitionService = {
-  getAll(page = 0, size = 10): Promise<Page<CompetitionDTO>> {
-    return api.get('/competitions', { params: { page, size } }).then((r) => r.data)
-  },
+function buildCompetitionFormData(
+  dto: CompetitionCreateDTO | CompetitionUpdateDTO,
+  bannerFile?: File | null,
+  regulationFile?: File | null,
+): FormData {
+  const form = new FormData()
+  form.append('body', new Blob([JSON.stringify(dto)], { type: 'application/json' }))
+  if (bannerFile) form.append('bannerFile', bannerFile)
+  if (regulationFile) form.append('regulationDocumentFile', regulationFile)
+  return form
+}
 
-  get(id: string): Promise<CompetitionDTO> {
-    return api.get(`/competitions/${id}`).then((r) => r.data)
-  },
+export class CompetitionService {
+  static async list(params: CompetitionListParams = {}): Promise<Page<CompetitionDTO>> {
+    const { sort, direction, ...rest } = params
+    const queryParams: Record<string, unknown> = { ...rest }
+    if (sort) queryParams.sort = direction ? `${sort},${direction.toUpperCase()}` : sort
+    const { data } = await api.get<Page<CompetitionDTO>>('/competitions', { params: queryParams })
+    return data
+  }
 
-  create(
+  static async get(id: string | number): Promise<CompetitionDTO> {
+    const { data } = await api.get<CompetitionDTO>(`/competitions/${id}`)
+    return data
+  }
+
+  static async create(
     dto: CompetitionCreateDTO,
-    bannerFile?: File,
-    regulationDocumentFile?: File,
+    bannerFile?: File | null,
+    regulationFile?: File | null,
   ): Promise<CompetitionDTO> {
-    const fd = buildMultipartForm(dto, { bannerFile, regulationDocumentFile })
-    return api.post('/competitions', fd).then((r) => r.data)
-  },
+    const formData = buildCompetitionFormData(dto, bannerFile, regulationFile)
+    const { data } = await api.post<CompetitionDTO>('/competitions', formData)
+    return data
+  }
 
-  update(
-    id: string,
+  static async update(
+    id: string | number,
     dto: CompetitionUpdateDTO,
     bannerFile?: File | null,
-    regulationDocumentFile?: File | null,
     removeBanner?: boolean,
+    regulationFile?: File | null,
     removeRegulationDocument?: boolean,
   ): Promise<CompetitionDTO> {
-    const fd = buildMultipartForm(dto, { bannerFile, regulationDocumentFile })
-    return api
-      .put(`/competitions/${id}`, fd, {
-        params: { removeBanner: removeBanner || undefined, removeRegulationDocument: removeRegulationDocument || undefined },
-      })
-      .then((r) => r.data)
-  },
+    const body: CompetitionUpdateDTO & { removeBanner?: boolean; removeRegulationDocument?: boolean } = { ...dto }
+    if (removeBanner) body.removeBanner = true
+    if (removeRegulationDocument) body.removeRegulationDocument = true
+    const formData = buildCompetitionFormData(body, bannerFile, regulationFile)
+    const { data } = await api.put<CompetitionDTO>(`/competitions/${id}`, formData)
+    return data
+  }
 
-  delete(id: string): Promise<void> {
-    return api.delete(`/competitions/${id}`).then(() => {})
-  },
+  static async openRegistration(id: string | number): Promise<CompetitionDTO> {
+    const { data } = await api.patch<CompetitionDTO>(`/competitions/${id}/open-registration`)
+    return data
+  }
 
-  scheduleRegistration(id: string, startingDate: string, endingDate: string): Promise<void> {
-    return api
-      .patch(`/competitions/${id}/schedule-registration`, null, { params: { startingDate, endingDate } })
-      .then(() => {})
-  },
+  static async closeRegistration(id: string | number, cancel: boolean): Promise<CompetitionDTO> {
+    const { data } = await api.patch<CompetitionDTO>(`/competitions/${id}/close-registration`, null, {
+      params: { cancel },
+    })
+    return data
+  }
 
-  openRegistration(id: string): Promise<void> {
-    return api.patch(`/competitions/${id}/open-registration`).then(() => {})
-  },
+  static async start(id: string | number): Promise<CompetitionDTO> {
+    const { data } = await api.patch<CompetitionDTO>(`/competitions/${id}/start`)
+    return data
+  }
 
-  closeRegistration(id: string, cancel = false): Promise<void> {
-    return api
-      .patch(`/competitions/${id}/close-registration`, null, { params: { cancel } })
-      .then(() => {})
-  },
+  static async end(id: string | number): Promise<CompetitionDTO> {
+    const { data } = await api.patch<CompetitionDTO>(`/competitions/${id}/end`)
+    return data
+  }
 
-  start(id: string): Promise<void> {
-    return api.patch(`/competitions/${id}/start`).then(() => {})
-  },
-
-  end(id: string): Promise<void> {
-    return api.patch(`/competitions/${id}/end`).then(() => {})
-  },
-
-  cancel(id: string): Promise<void> {
-    return api.patch(`/competitions/${id}/cancel`).then(() => {})
-  },
+  static async cancel(id: string | number): Promise<CompetitionDTO> {
+    const { data } = await api.patch<CompetitionDTO>(`/competitions/${id}/cancel`)
+    return data
+  }
 }
 
-export default competitionService
+export default CompetitionService

@@ -1,5 +1,5 @@
 import api from '@/lib/axios'
-import type { LoginResponseDTO, UserDTO } from '@ubes/types'
+import type { LoginResponseDTO } from '@ubes/types'
 
 export class AuthService {
   static async login(googleIdToken: string): Promise<LoginResponseDTO> {
