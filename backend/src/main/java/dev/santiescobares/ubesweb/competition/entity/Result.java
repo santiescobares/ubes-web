@@ -1,6 +1,7 @@
 package dev.santiescobares.ubesweb.competition.entity;
 
 import dev.santiescobares.ubesweb.competition.enums.ParticipantPositionType;
+import dev.santiescobares.ubesweb.enums.School;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -39,6 +40,9 @@ public class Result {
     @Column(length = 100)
     private String name;
     private int points;
+
+    @Enumerated(EnumType.STRING)
+    private School school;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "participant_id")

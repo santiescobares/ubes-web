@@ -1,6 +1,7 @@
 package dev.santiescobares.ubesweb.competition.controller;
 
 import dev.santiescobares.ubesweb.Global;
+import dev.santiescobares.ubesweb.competition.dto.result.ResultBulkUpsertDTO;
 import dev.santiescobares.ubesweb.competition.dto.result.ResultCreateDTO;
 import dev.santiescobares.ubesweb.competition.dto.result.ResultDTO;
 import dev.santiescobares.ubesweb.competition.dto.result.ResultUpdateDTO;
@@ -33,6 +34,15 @@ public class ResultController {
             @PathVariable ParticipantPositionType positionType
     ) {
         return ResponseEntity.ok(resultService.findResultDTOsByType(competitionId, positionType));
+    }
+
+    @PostMapping("/bulk")
+    @PreAuthorize("hasAuthority('EXECUTIVE')")
+    public ResponseEntity<List<ResultDTO>> bulkUpsert(
+            @PathVariable Long competitionId,
+            @RequestBody @Valid ResultBulkUpsertDTO dto
+    ) {
+        return ResponseEntity.ok(resultService.upsertResultsBulk(competitionId, dto));
     }
 
     @PostMapping

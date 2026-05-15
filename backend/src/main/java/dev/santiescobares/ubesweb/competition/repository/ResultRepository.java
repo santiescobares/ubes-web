@@ -18,4 +18,8 @@ public interface ResultRepository extends JpaRepository<Result, Long> {
     Optional<Integer> findMaxPositionNumberByCompetitionIdAndPositionType(Long competitionId, ParticipantPositionType positionType);
 
     List<Result> findAllByIdIn(List<Long> ids);
+
+    List<Result> findAllByCompetitionIdAndPositionTypeAndPositionNumberGreaterThan(
+            Long competitionId, ParticipantPositionType positionType, int positionNumber
+    );
 }
