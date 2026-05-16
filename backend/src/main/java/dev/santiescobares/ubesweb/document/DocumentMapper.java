@@ -9,6 +9,9 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 
+import java.util.Collection;
+import java.util.List;
+
 @Mapper(
         componentModel = "spring",
         nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE,
@@ -20,6 +23,9 @@ public interface DocumentMapper {
 
     @Mapping(source = "key", target = "url", qualifiedByName = "r2KeyToR2URL")
     DocumentDTO toDTO(Document document);
+
+    @Mapping(source = "key", target = "url", qualifiedByName = "r2KeyToR2URL")
+    List<DocumentDTO> toDTOList(Collection<Document> documents);
 
     void updateFromDTO(@MappingTarget Document document, DocumentUpdateDTO dto);
 }

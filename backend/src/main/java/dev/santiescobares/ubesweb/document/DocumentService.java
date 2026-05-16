@@ -5,7 +5,6 @@ import dev.santiescobares.ubesweb.context.RequestContextHolder;
 import dev.santiescobares.ubesweb.document.dto.DocumentCreateDTO;
 import dev.santiescobares.ubesweb.document.dto.DocumentDTO;
 import dev.santiescobares.ubesweb.document.dto.DocumentUpdateDTO;
-import dev.santiescobares.ubesweb.document.enums.DocumentType;
 import dev.santiescobares.ubesweb.document.event.DocumentCreateEvent;
 import dev.santiescobares.ubesweb.document.event.DocumentDeleteEvent;
 import dev.santiescobares.ubesweb.document.event.DocumentUpdateEvent;
@@ -17,13 +16,12 @@ import dev.santiescobares.ubesweb.service.StorageService;
 import dev.santiescobares.ubesweb.util.FileUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -70,9 +68,6 @@ public class DocumentService {
     }
 
     public DocumentDTO createDocument(DocumentCreateDTO dto, MultipartFile documentFile, Set<String> allowedFormats) {
-        if (dto.type() == DocumentType.REGULATION) {
-            throw new IllegalArgumentException("Invalid endpoint for regulation documents");
-        }
         Document document = createDocumentDinamically(dto, documentFile, allowedFormats);
         return documentMapper.toDTO(document);
     }
@@ -89,9 +84,6 @@ public class DocumentService {
     ) {
         if (dto.name() != null && !dto.name().equalsIgnoreCase(document.getName()) && documentRepository.existsByNameIgnoreCase(dto.name())) {
             throw new ResourceAlreadyExistsException(ResourceType.DOCUMENT);
-        }
-        if (dto.type() != null && dto.type() == DocumentType.REGULATION) {
-            throw new IllegalArgumentException("Invalid endpoint for regulation documents");
         }
 
         documentMapper.updateFromDTO(document, dto);
@@ -141,8 +133,9 @@ public class DocumentService {
     }
 
     @Transactional(readOnly = true)
-    public Page<DocumentDTO> getDocumentDTOs(Pageable pageable) {
-        return documentRepository.findAll(pageable).map(documentMapper::toDTO);
+    public List<DocumentDTO> findDocumentDTOs(Long id, String name) {
+        String trimmed = (name != null && !name.isBlank()) ? name.trim().toLowerCase() : null;
+        return documentMapper.toDTOList(documentRepository.findAllByFilters(id, trimmed));
     }
 
     private Document getById(Long id) {

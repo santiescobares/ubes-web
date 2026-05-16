@@ -14,7 +14,7 @@ public abstract class DocumentEvent extends LoggableEvent<Document> {
     private final Document document;
 
     public DocumentEvent(UUID userId, Document document, Action action) {
-        super(userId, ResourceType.USER, document.getId().toString(), action);
+        super(userId, ResourceType.DOCUMENT, document.getId().toString(), action);
         this.document = document;
     }
 

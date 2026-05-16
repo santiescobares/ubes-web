@@ -6,14 +6,14 @@ import dev.santiescobares.ubesweb.document.dto.DocumentDTO;
 import dev.santiescobares.ubesweb.document.dto.DocumentUpdateDTO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @RestController
 @RequestMapping(Global.BASE_URL + "/documents")
@@ -54,8 +54,10 @@ public class DocumentController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('EXECUTIVE')")
-    public ResponseEntity<Page<DocumentDTO>> getAll(Pageable pageable) {
-        return ResponseEntity.ok(documentService.getDocumentDTOs(pageable));
+    public ResponseEntity<List<DocumentDTO>> getAll(
+            @RequestParam(required = false) Long id,
+            @RequestParam(required = false) String name
+    ) {
+        return ResponseEntity.ok(documentService.findDocumentDTOs(id, name));
     }
 }
