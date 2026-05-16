@@ -32,3 +32,8 @@ export function canManageEvents(role: Role): boolean {
   const auth = getAuthority(role)
   return auth === RoleAuthority.EXECUTIVE || auth === RoleAuthority.PRESS
 }
+
+export function canManagePosts(role: Role): boolean {
+  const auth = getAuthority(role)
+  return auth === RoleAuthority.EXECUTIVE || auth === RoleAuthority.PRESS
+}
