@@ -12,6 +12,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -31,6 +32,15 @@ public class PunishmentController {
     @DeleteMapping("/{id}")
     public ResponseEntity<PunishmentDTO> remove(@PathVariable Long id, @RequestBody @Valid PunishmentRemoveDTO dto) {
         return ResponseEntity.ok().body(punishmentService.removePunishment(id, dto));
+    }
+
+    @GetMapping("/by-target/{targetId}")
+    @PreAuthorize("hasAuthority('EXECUTIVE')")
+    public ResponseEntity<Page<PunishmentDTO>> getByTarget(
+            @PathVariable UUID targetId,
+            @PageableDefault(size = 3) Pageable pageable
+    ) {
+        return ResponseEntity.ok(punishmentService.findPunishmentDTOsByTarget(targetId, pageable));
     }
 
     @GetMapping

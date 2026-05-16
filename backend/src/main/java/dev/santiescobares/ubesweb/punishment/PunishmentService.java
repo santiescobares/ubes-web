@@ -112,6 +112,11 @@ public class PunishmentService {
         return punishments.map(punishmentMapper::toDTO);
     }
 
+    @Transactional(readOnly = true)
+    public Page<PunishmentDTO> findPunishmentDTOsByTarget(UUID targetId, Pageable pageable) {
+        return punishmentRepository.findByTargetOrderedByStatus(targetId, pageable).map(punishmentMapper::toDTO);
+    }
+
     private Punishment getById(Long id) {
         return punishmentRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException(ResourceType.PUNISHMENT));
     }

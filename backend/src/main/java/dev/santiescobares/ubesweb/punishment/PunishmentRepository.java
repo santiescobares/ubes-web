@@ -2,6 +2,7 @@ package dev.santiescobares.ubesweb.punishment;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -21,6 +22,16 @@ public interface PunishmentRepository extends JpaRepository<Punishment, Long> {
             @Param("targetId") UUID targetId,
             @Param("now") LocalDateTime now
     );
+
+    @EntityGraph(attributePaths = {"target", "issuedBy", "removedBy"})
+    @Query("""
+        SELECT p FROM Punishment p
+        WHERE p.target.id = :targetId
+        ORDER BY
+            CASE WHEN p.removedAt IS NULL AND (p.expiresAt IS NULL OR p.expiresAt > CURRENT_TIMESTAMP) THEN 0 ELSE 1 END,
+            p.createdAt DESC
+    """)
+    Page<Punishment> findByTargetOrderedByStatus(@Param("targetId") UUID targetId, Pageable pageable);
 
     @Query("""
         SELECT p FROM Punishment p
