@@ -1,13 +1,13 @@
 import type { UserSnapshotDTO } from './user.types'
 
 export interface PunishmentDTO {
-  id: string
+  id: number
   createdAt: string
   updatedAt: string
-  issuedOn: UserSnapshotDTO
+  target: UserSnapshotDTO
   issuedBy: UserSnapshotDTO
   reason: string
-  expiresAt: string
+  expiresAt: string | null
   active: boolean
   removedAt: string | null
   removedBy: UserSnapshotDTO | null
@@ -15,11 +15,11 @@ export interface PunishmentDTO {
 }
 
 export interface PunishmentCreateDTO {
-  issuedOnId: string
+  targetId: string
   reason: string
-  expiresAt: string
+  durationSeconds: number
 }
 
 export interface PunishmentRemoveDTO {
-  removeReason: string
+  reason: string
 }

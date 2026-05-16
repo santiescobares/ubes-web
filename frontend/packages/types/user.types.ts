@@ -34,4 +34,5 @@ export interface UserUpdateDTO {
   firstName?: string
   lastName?: string
   school?: School
+  role?: Role
 }

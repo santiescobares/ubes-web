@@ -1,5 +1,24 @@
 import { Role, RoleAuthority } from '@ubes/types'
 
+const ROLE_RANK: Record<Role, number> = {
+  DEVELOPER:         6,
+  PRESIDENT:         5,
+  VICE_PRESIDENT:    4,
+  SECRETARY:         3,
+  SPORT_SECRETARY:   2,
+  CULTURE_SECRETARY: 2,
+  PRESS_SECRETARY:   2,
+  ADMIN_SECRETARY:   2,
+  CANTEEN_SECRETARY: 2,
+  IIRR_SECRETARY:    1,
+  DELEGATE:          1,
+  USER:              0,
+}
+
+export function getRoleRank(role: Role): number {
+  return ROLE_RANK[role] ?? 0
+}
+
 const ROLE_AUTHORITY_MAP: Record<Role, RoleAuthority> = {
   DEVELOPER:        RoleAuthority.EXECUTIVE,
   PRESIDENT:        RoleAuthority.EXECUTIVE,
