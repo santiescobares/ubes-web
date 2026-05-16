@@ -46,6 +46,17 @@ export function formatEventHourRange(start: string, end: string): string {
   }
 }
 
+export function formatDocumentDateTime(value: string | null | undefined): string {
+  if (!value) return '—'
+  try {
+    return format(parseISO(value), 'dd-MM-yyyy hh:mm a', { locale: es })
+      .toUpperCase()
+      .replace(/\./g, '')
+  } catch {
+    return '—'
+  }
+}
+
 export function formatSelectedDayHeader(date: Date): string {
   try {
     return format(date, "EEEE, d 'de' MMMM yyyy", { locale: es })
