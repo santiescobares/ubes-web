@@ -85,8 +85,13 @@ public class UserController {
     @GetMapping("/all")
     @PreAuthorize("hasAuthority('EXECUTIVE')")
     public ResponseEntity<Page<UserDTO>> getAll(
-            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+            @RequestParam(required = false) UUID id,
+            @RequestParam(required = false) String firstName,
+            @RequestParam(required = false) String lastName,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String googleId,
+            @PageableDefault(sort = "id", direction = Sort.Direction.ASC) Pageable pageable
     ) {
-        return ResponseEntity.ok(userService.findAllUserDTOs(pageable));
+        return ResponseEntity.ok(userService.findUserDTOs(id, firstName, lastName, email, googleId, pageable));
     }
 }

@@ -206,8 +206,12 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public Page<UserDTO> findAllUserDTOs(Pageable pageable) {
-        return userRepository.findAll(pageable).map(userMapper::toDTO);
+    public Page<UserDTO> findUserDTOs(UUID id, String firstName, String lastName, String email, String googleId, Pageable pageable) {
+        String fn  = (firstName != null && !firstName.isBlank()) ? firstName.trim().toLowerCase() : null;
+        String ln  = (lastName  != null && !lastName.isBlank())  ? lastName.trim().toLowerCase()  : null;
+        String em  = (email     != null && !email.isBlank())     ? email.trim().toLowerCase()     : null;
+        String gid = (googleId  != null && !googleId.isBlank())  ? googleId.trim().toLowerCase()  : null;
+        return userRepository.findAllByFilters(id, fn, ln, em, gid, pageable).map(userMapper::toDTO);
     }
 
     public User getById(UUID id) {
