@@ -4,6 +4,7 @@ import dev.santiescobares.ubesweb.config.S3Config;
 import dev.santiescobares.ubesweb.context.RequestContextHolder;
 import dev.santiescobares.ubesweb.enums.ResourceType;
 import dev.santiescobares.ubesweb.exception.type.ResourceNotFoundException;
+
 import dev.santiescobares.ubesweb.post.dto.PostCreateDTO;
 import dev.santiescobares.ubesweb.post.dto.PostDTO;
 import dev.santiescobares.ubesweb.post.dto.PostUpdateDTO;
@@ -97,15 +98,9 @@ public class PostService {
     }
 
     @Transactional(readOnly = true)
-    public PostDTO getPostDTOBySlug(String slug) {
-        return postMapper.toDTO(
-                postRepository.findBySlug(slug).orElseThrow(() -> new ResourceNotFoundException(ResourceType.POST))
-        );
-    }
-
-    @Transactional(readOnly = true)
-    public Page<PostDTO> getPostDTOs(Pageable pageable) {
-        return postRepository.findAll(pageable).map(postMapper::toDTO);
+    public Page<PostDTO> findPostDTOs(Long id, String slug, Pageable pageable) {
+        String trimmed = (slug != null && !slug.isBlank()) ? slug.trim().toLowerCase() : null;
+        return postRepository.findAllByFilters(id, trimmed, pageable).map(postMapper::toDTO);
     }
 
     private Post getById(Long id) {

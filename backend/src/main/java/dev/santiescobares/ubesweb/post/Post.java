@@ -26,7 +26,7 @@ public class Post extends CULoggableEntity {
     private String title;
     @Column(unique = true)
     private String slug;
-    @Column(length = 5000)
+    @Column(length = 10000)
     private String body;
 
     private String bannerKey;

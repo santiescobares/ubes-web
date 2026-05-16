@@ -51,15 +51,12 @@ public class PostController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/slug/{slug}")
-    public ResponseEntity<PostDTO> getBySlug(@PathVariable String slug) {
-        return ResponseEntity.ok(postService.getPostDTOBySlug(slug));
-    }
-
     @GetMapping
     public ResponseEntity<Page<PostDTO>> getAll(
-            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+            @RequestParam(required = false) Long id,
+            @RequestParam(required = false) String slug,
+            @PageableDefault(size = 5, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        return ResponseEntity.ok(postService.getPostDTOs(pageable));
+        return ResponseEntity.ok(postService.findPostDTOs(id, slug, pageable));
     }
 }

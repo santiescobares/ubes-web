@@ -4,7 +4,6 @@ import dev.santiescobares.ubesweb.config.S3Config;
 import dev.santiescobares.ubesweb.context.RequestContextData;
 import dev.santiescobares.ubesweb.context.RequestContextHolder;
 import dev.santiescobares.ubesweb.enums.Role;
-import dev.santiescobares.ubesweb.exception.type.ResourceNotFoundException;
 import dev.santiescobares.ubesweb.post.dto.PostCreateDTO;
 import dev.santiescobares.ubesweb.post.dto.PostDTO;
 import dev.santiescobares.ubesweb.post.dto.PostUpdateDTO;
@@ -29,6 +28,7 @@ import org.springframework.data.domain.PageRequest;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -165,43 +165,52 @@ class PostServiceTest {
         verify(eventPublisher).publishEvent(any(PostDeleteEvent.class));
     }
 
-    // --- getPostDTOBySlug ---
+    // --- findPostDTOs ---
 
     @Test
-    void getPostDTOBySlug_notFound_throwsResourceNotFoundException() {
-        when(postRepository.findBySlug("slug-inexistente")).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> postService.getPostDTOBySlug("slug-inexistente"))
-                .isInstanceOf(ResourceNotFoundException.class);
-    }
-
-    @Test
-    void getPostDTOBySlug_found_returnsDTO() {
+    void findPostDTOs_withNullFilters_returnsMappedPage() {
         Post post = new Post();
         PostDTO postDTO = mock(PostDTO.class);
-
-        when(postRepository.findBySlug("mi-post")).thenReturn(Optional.of(post));
-        when(postMapper.toDTO(post)).thenReturn(postDTO);
-
-        PostDTO result = postService.getPostDTOBySlug("mi-post");
-
-        assertThat(result).isEqualTo(postDTO);
-    }
-
-    // --- getPostDTOs ---
-
-    @Test
-    void getPostDTOs_returnsMappedPage() {
-        Post post = new Post();
-        PostDTO postDTO = mock(PostDTO.class);
-        PageRequest pageable = PageRequest.of(0, 10);
+        PageRequest pageable = PageRequest.of(0, 5);
         Page<Post> page = new PageImpl<>(List.of(post));
 
-        when(postRepository.findAll(pageable)).thenReturn(page);
+        when(postRepository.findAllByFilters(null, null, pageable)).thenReturn(page);
         when(postMapper.toDTO(post)).thenReturn(postDTO);
 
-        Page<PostDTO> result = postService.getPostDTOs(pageable);
+        Page<PostDTO> result = postService.findPostDTOs(null, null, pageable);
 
         assertThat(result.getContent()).containsExactly(postDTO);
+    }
+
+    @Test
+    void findPostDTOs_withSlug_passesNormalizedSlug() {
+        Post post = new Post();
+        PostDTO postDTO = mock(PostDTO.class);
+        PageRequest pageable = PageRequest.of(0, 5);
+        Page<Post> page = new PageImpl<>(List.of(post));
+
+        when(postRepository.findAllByFilters(null, "mi-post", pageable)).thenReturn(page);
+        when(postMapper.toDTO(post)).thenReturn(postDTO);
+
+        Page<PostDTO> result = postService.findPostDTOs(null, "  MI-POST  ", pageable);
+
+        assertThat(result.getContent()).containsExactly(postDTO);
+        verify(postRepository).findAllByFilters(null, "mi-post", pageable);
+    }
+
+    @Test
+    void findPostDTOs_withId_passesId() {
+        Post post = new Post();
+        PostDTO postDTO = mock(PostDTO.class);
+        PageRequest pageable = PageRequest.of(0, 5);
+        Page<Post> page = new PageImpl<>(List.of(post));
+
+        when(postRepository.findAllByFilters(42L, null, pageable)).thenReturn(page);
+        when(postMapper.toDTO(post)).thenReturn(postDTO);
+
+        Page<PostDTO> result = postService.findPostDTOs(42L, null, pageable);
+
+        assertThat(result.getContent()).containsExactly(postDTO);
+        verify(postRepository).findAllByFilters(42L, null, pageable);
     }
 }
