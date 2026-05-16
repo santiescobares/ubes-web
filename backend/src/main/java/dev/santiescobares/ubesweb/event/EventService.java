@@ -21,7 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 import static dev.santiescobares.ubesweb.Global.*;
@@ -112,18 +111,9 @@ public class EventService {
     }
 
     @Transactional(readOnly = true)
-    public List<EventDTO> findEventDTOs(Long id, LocalDateTime from, LocalDateTime to) {
-        List<Event> events = new ArrayList<>();
-        if (id != null) {
-            events.add(getById(id));
-        }
-        if (from != null || to != null) {
-            if (from == null) from = LocalDateTime.now();
-            if (to == null) to = LocalDateTime.now().plusDays(30);
-
-            events.addAll(eventRepository.findAllByStartingDateAfterAndEndingDateBefore(from, to));
-        }
-        return eventMapper.toDTOList(events);
+    public List<EventDTO> findEventDTOs(Long id, String name, LocalDateTime from, LocalDateTime to) {
+        String trimmed = (name != null && !name.isBlank()) ? name.trim().toLowerCase() : null;
+        return eventMapper.toDTOList(eventRepository.findAllByFilters(id, trimmed, from, to));
     }
 
     private Event getById(Long id) {

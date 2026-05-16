@@ -13,7 +13,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import org.springframework.format.annotation.DateTimeFormat;
+
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @RestController
@@ -53,9 +56,12 @@ public class EventController {
     @GetMapping
     public ResponseEntity<List<EventDTO>> getAll(
             @RequestParam(required = false) Long id,
-            @RequestParam(required = false) LocalDateTime from,
-            @RequestParam(required = false) LocalDateTime to
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime to
     ) {
-        return ResponseEntity.ok(eventService.findEventDTOs(id, from, to));
+        LocalDateTime fromLdt = from != null ? from.toLocalDateTime() : null;
+        LocalDateTime toLdt = to != null ? to.toLocalDateTime() : null;
+        return ResponseEntity.ok(eventService.findEventDTOs(id, name, fromLdt, toLdt));
     }
 }

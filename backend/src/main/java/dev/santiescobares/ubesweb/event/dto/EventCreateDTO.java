@@ -16,10 +16,8 @@ public record EventCreateDTO(
         @Size(max = 1000, message = "Description is too long")
         String description,
         @NotNull(message = "Starting date is required")
-        @Future(message = "Starting date must be a future date")
         LocalDateTime startingDate,
         @NotNull(message = "Ending date is required")
-        @Future(message = "Ending date must be a future date")
         LocalDateTime endingDate,
         @Valid
         LocationDTO location

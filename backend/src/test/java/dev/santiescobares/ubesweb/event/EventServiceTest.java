@@ -199,10 +199,10 @@ class EventServiceTest {
         event.setId(1L);
         EventDTO eventDTO = mock(EventDTO.class);
 
-        when(eventRepository.findById(1L)).thenReturn(Optional.of(event));
+        when(eventRepository.findAllByFilters(1L, null, null, null)).thenReturn(List.of(event));
         when(eventMapper.toDTOList(List.of(event))).thenReturn(List.of(eventDTO));
 
-        List<EventDTO> result = eventService.findEventDTOs(1L, null, null);
+        List<EventDTO> result = eventService.findEventDTOs(1L, null, null, null);
 
         assertThat(result).containsExactly(eventDTO);
     }
@@ -215,19 +215,20 @@ class EventServiceTest {
         LocalDateTime to = LocalDateTime.now().plusDays(7);
         EventDTO eventDTO = mock(EventDTO.class);
 
-        when(eventRepository.findAllByStartingDateAfterAndEndingDateBefore(from, to)).thenReturn(List.of(event));
+        when(eventRepository.findAllByFilters(null, null, from, to)).thenReturn(List.of(event));
         when(eventMapper.toDTOList(List.of(event))).thenReturn(List.of(eventDTO));
 
-        List<EventDTO> result = eventService.findEventDTOs(null, from, to);
+        List<EventDTO> result = eventService.findEventDTOs(null, null, from, to);
 
         assertThat(result).containsExactly(eventDTO);
     }
 
     @Test
     void getEvents_withNoParams_returnsEmptyList() {
+        when(eventRepository.findAllByFilters(null, null, null, null)).thenReturn(List.of());
         when(eventMapper.toDTOList(List.of())).thenReturn(List.of());
 
-        List<EventDTO> result = eventService.findEventDTOs(null, null, null);
+        List<EventDTO> result = eventService.findEventDTOs(null, null, null, null);
 
         assertThat(result).isEmpty();
     }
