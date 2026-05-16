@@ -12,27 +12,28 @@ export interface EventDTO {
   updatedAt: string
   type: EventType
   name: string
-  description: string
+  description: string | null
   startingDate: string
-  endingDate: string | null
-  location: LocationDTO
+  endingDate: string
+  location: LocationDTO | null
   bannerURL: string | null
 }
 
 export interface EventCreateDTO {
   type: EventType
   name: string
-  description: string
+  description?: string | null
   startingDate: string
-  endingDate?: string
-  location: LocationDTO
+  endingDate: string
+  location?: LocationDTO | null
 }
 
 export interface EventUpdateDTO {
   type?: EventType
   name?: string
-  description?: string
+  description?: string | null
   startingDate?: string
   endingDate?: string
-  location?: LocationDTO
+  location?: LocationDTO | null
+  removeBanner?: boolean
 }

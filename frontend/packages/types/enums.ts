@@ -40,11 +40,11 @@ export const School = {
 export type School = (typeof School)[keyof typeof School]
 
 export const EventType = {
-  SPORT: 'SPORT',
-  CULTURAL: 'CULTURAL',
-  PARTY: 'PARTY',
-  ASSEMBLY: 'ASSEMBLY',
-  OTHER: 'OTHER',
+  COMPETITION:    'COMPETITION',
+  SPECIAL:        'SPECIAL',
+  PARTY:          'PARTY',
+  NATIONAL_EVENT: 'NATIONAL_EVENT',
+  OTHER:          'OTHER',
 } as const
 export type EventType = (typeof EventType)[keyof typeof EventType]
 
