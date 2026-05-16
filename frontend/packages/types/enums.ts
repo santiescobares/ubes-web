@@ -84,19 +84,23 @@ export const IdType = {
 export type IdType = (typeof IdType)[keyof typeof IdType]
 
 export const DocumentType = {
-  STATUTE: 'STATUTE',
-  REGULATION: 'REGULATION',
-  MINUTES: 'MINUTES',
-  MEDICAL_CERTIFICATE: 'MEDICAL_CERTIFICATE',
-  OTHER: 'OTHER',
+  STATUTE:     'STATUTE',
+  REGULATION:  'REGULATION',
+  STATEMENT:   'STATEMENT',
+  INFORMATIVE: 'INFORMATIVE',
+  OTHER:       'OTHER',
 } as const
 export type DocumentType = (typeof DocumentType)[keyof typeof DocumentType]
 
 export const FileType = {
-  PDF: 'PDF',
-  IMAGE: 'IMAGE',
-  WORD: 'WORD',
-  OTHER: 'OTHER',
+  PDF:    'PDF',
+  WORD:   'WORD',
+  WORDX:  'WORDX',
+  EXCEL:  'EXCEL',
+  EXCELX: 'EXCELX',
+  PNG:    'PNG',
+  JPG:    'JPG',
+  JPEG:   'JPEG',
 } as const
 export type FileType = (typeof FileType)[keyof typeof FileType]
 
