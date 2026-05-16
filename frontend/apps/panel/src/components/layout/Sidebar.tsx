@@ -8,17 +8,24 @@ import {
   Users,
 } from 'lucide-react'
 import logoImg from '@/assets/logo.png'
+import { useAuthStore } from '@/store/authStore'
+import { hasExecutiveAccess } from '@/lib/roleUtils'
 
-const navItems = [
-  { to: '/', label: 'Panel de Control', icon: LayoutDashboard, end: true },
-  { to: '/competencias', label: 'Competencias', icon: Trophy },
-  { to: '/eventos', label: 'Eventos', icon: Calendar },
-  { to: '/anuncios', label: 'Anuncios', icon: Bell },
-  { to: '/documentos', label: 'Documentos', icon: FileText },
-  { to: '/usuarios', label: 'Usuarios', icon: Users },
+const baseNavItems = [
+  { to: '/', label: 'Panel de Control', icon: LayoutDashboard, end: true, executiveOnly: false },
+  { to: '/competencias', label: 'Competencias', icon: Trophy, executiveOnly: false },
+  { to: '/eventos', label: 'Eventos', icon: Calendar, executiveOnly: false },
+  { to: '/anuncios', label: 'Anuncios', icon: Bell, executiveOnly: false },
+  { to: '/documentos', label: 'Documentos', icon: FileText, executiveOnly: false },
+  { to: '/usuarios', label: 'Usuarios', icon: Users, executiveOnly: true },
 ]
 
 export default function Sidebar() {
+  const user = useAuthStore((s) => s.user)
+  const isExecutive = user ? hasExecutiveAccess(user.role) : false
+
+  const navItems = baseNavItems.filter((item) => !item.executiveOnly || isExecutive)
+
   return (
     <aside className="sidebar">
       <div className="sidebar-logo">
