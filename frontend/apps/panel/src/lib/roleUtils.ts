@@ -27,3 +27,8 @@ export function hasCompetitionAccess(role: Role): boolean {
 export function hasExecutiveAccess(role: Role): boolean {
   return getAuthority(role) === RoleAuthority.EXECUTIVE
 }
+
+export function canManageEvents(role: Role): boolean {
+  const auth = getAuthority(role)
+  return auth === RoleAuthority.EXECUTIVE || auth === RoleAuthority.PRESS
+}

@@ -33,3 +33,23 @@ export function toLocalDateTimeString(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
 }
+
+export function formatEventHourRange(start: string, end: string): string {
+  try {
+    const fmt = (iso: string) =>
+      format(parseISO(iso), 'h:mm a', { locale: es }).toUpperCase().replace(/\./g, '')
+    const s = fmt(start)
+    const e = fmt(end)
+    return s === e ? s : `${s} – ${e}`
+  } catch {
+    return '—'
+  }
+}
+
+export function formatSelectedDayHeader(date: Date): string {
+  try {
+    return format(date, "EEEE, d 'de' MMMM yyyy", { locale: es })
+  } catch {
+    return '—'
+  }
+}
