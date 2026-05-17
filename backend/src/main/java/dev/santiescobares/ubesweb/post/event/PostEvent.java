@@ -14,7 +14,7 @@ public abstract class PostEvent extends LoggableEvent<Post> {
     private final Post post;
 
     public PostEvent(UUID userId, Post post, Action action) {
-        super(userId, ResourceType.USER, post.getId().toString(), action);
+        super(userId, ResourceType.POST, post.getId().toString(), action);
         this.post = post;
     }
 

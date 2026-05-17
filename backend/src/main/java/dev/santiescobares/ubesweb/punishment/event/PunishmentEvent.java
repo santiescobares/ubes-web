@@ -14,7 +14,7 @@ public abstract class PunishmentEvent extends LoggableEvent<Punishment> {
     private final Punishment punishment;
 
     public PunishmentEvent(UUID userId, Punishment punishment, Action action) {
-        super(userId, ResourceType.USER, punishment.getId().toString(), action);
+        super(userId, ResourceType.PUNISHMENT, punishment.getId().toString(), action);
         this.punishment = punishment;
     }
 

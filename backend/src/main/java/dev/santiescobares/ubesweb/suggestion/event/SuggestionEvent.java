@@ -13,8 +13,8 @@ public abstract class SuggestionEvent extends LoggableEvent<Suggestion> {
 
     private final Suggestion suggestion;
 
-    public SuggestionEvent(UUID userId, Suggestion suggestion, Action action) {
-        super(userId, ResourceType.USER, suggestion.getId().toString(), action);
+    public SuggestionEvent(UUID userId, ResourceType resourceType, Suggestion suggestion, Action action) {
+        super(userId, resourceType, suggestion.getId().toString(), action);
         this.suggestion = suggestion;
     }
 

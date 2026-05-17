@@ -13,8 +13,8 @@ public abstract class CompetitionEvent extends LoggableEvent<Competition> {
 
     private final Competition competition;
 
-    public CompetitionEvent(UUID userId, Competition competition, Action action) {
-        super(userId, ResourceType.USER, competition.getId().toString(), action);
+    public CompetitionEvent(UUID userId, ResourceType resourceType, Competition competition, Action action) {
+        super(userId, resourceType, competition.getId().toString(), action);
         this.competition = competition;
     }
 
