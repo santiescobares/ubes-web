@@ -11,6 +11,7 @@ import EventosPage from '@/pages/EventosPage'
 import AnunciosPage from '@/pages/AnunciosPage'
 import DocumentosPage from '@/pages/DocumentosPage'
 import UsuariosPage from '@/pages/UsuariosPage'
+import AuditoriaPage from '@/pages/AuditoriaPage'
 import { useAuthStore } from '@/store/authStore'
 
 function AppInit() {
@@ -32,6 +33,7 @@ function AppInit() {
           <Route path="anuncios" element={<AnunciosPage />} />
           <Route path="documentos" element={<DocumentosPage />} />
           <Route path="usuarios" element={<UsuariosPage />} />
+          <Route path="auditoria" element={<AuditoriaPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/login" replace />} />

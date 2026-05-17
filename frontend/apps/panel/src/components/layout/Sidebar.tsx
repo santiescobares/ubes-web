@@ -6,6 +6,7 @@ import {
   Bell,
   FileText,
   Users,
+  ScrollText,
 } from 'lucide-react'
 import logoImg from '@/assets/logo.png'
 import { useAuthStore } from '@/store/authStore'
@@ -18,6 +19,7 @@ const baseNavItems = [
   { to: '/anuncios', label: 'Anuncios', icon: Bell, executiveOnly: false },
   { to: '/documentos', label: 'Documentos', icon: FileText, executiveOnly: false },
   { to: '/usuarios', label: 'Usuarios', icon: Users, executiveOnly: true },
+  { to: '/auditoria', label: 'Auditoría', icon: ScrollText, executiveOnly: true },
 ]
 
 export default function Sidebar() {

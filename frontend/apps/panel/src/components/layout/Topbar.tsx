@@ -10,6 +10,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/anuncios': 'Anuncios',
   '/documentos': 'Documentos',
   '/usuarios': 'Usuarios',
+  '/auditoria': 'Auditoría',
 }
 
 export default function Topbar() {
