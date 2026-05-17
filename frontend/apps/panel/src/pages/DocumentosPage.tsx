@@ -15,10 +15,10 @@ type DocumentSortField = 'id' | 'name' | 'createdAt' | 'updatedAt'
 const PAGE_SIZE = 16
 
 const DOCUMENT_SORT_OPTIONS: { value: DocumentSortField; label: string }[] = [
-  { value: 'id',        label: 'ID' },
-  { value: 'name',      label: 'Nombre' },
   { value: 'createdAt', label: 'Fecha de Creación' },
   { value: 'updatedAt', label: 'Fecha de Modificación' },
+  { value: 'name',      label: 'Título' },
+  { value: 'id',        label: 'ID' },
 ]
 
 function sortDocuments(docs: DocumentDTO[], field: DocumentSortField, dir: SortDirection): DocumentDTO[] {

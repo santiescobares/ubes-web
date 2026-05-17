@@ -13,6 +13,12 @@ import type { CompetitionDTO } from '@ubes/types'
 
 const PAGE_SIZE = 16
 
+const COMPETITION_SORT_OPTIONS: { value: SortField; label: string }[] = [
+  { value: 'startingDate', label: 'Fecha de Inicio' },
+  { value: 'name',         label: 'Nombre' },
+  { value: 'id',           label: 'ID' },
+]
+
 export default function CompetenciasPage() {
   const navigate = useNavigate()
   const user = useAuthStore(s => s.user)
@@ -112,6 +118,7 @@ export default function CompetenciasPage() {
               direction={direction}
               onSortChange={setSort}
               onDirectionChange={setDirection}
+              sortOptions={COMPETITION_SORT_OPTIONS}
             />
 
             {canCreate && (

@@ -63,7 +63,7 @@ export default function CompetitionDetailPage() {
   }
 
   return (
-    <div className="detail-page">
+    <div className="detail-page fade-up">
       <div className="detail-left">
         <CompetitionDetailEditor key={competition.updatedAt} competition={competition} onReload={load} />
       </div>

@@ -15,10 +15,10 @@ import type { UserDTO } from '@ubes/types'
 type UserSortField = 'id' | 'lastName' | 'firstName' | 'createdAt'
 
 const USER_SORT_OPTIONS: { value: UserSortField; label: string }[] = [
-  { value: 'id',        label: 'ID' },
+  { value: 'createdAt', label: 'Fecha de Alta' },
   { value: 'lastName',  label: 'Apellido' },
   { value: 'firstName', label: 'Nombre' },
-  { value: 'createdAt', label: 'Fecha de Alta' },
+  { value: 'id',        label: 'ID' },
 ]
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i

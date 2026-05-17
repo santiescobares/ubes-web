@@ -13,10 +13,10 @@ import type { PostDTO } from '@ubes/types'
 type PostSortField = 'id' | 'title' | 'createdAt' | 'updatedAt'
 
 const POST_SORT_OPTIONS: { value: PostSortField; label: string }[] = [
-  { value: 'id',        label: 'ID' },
-  { value: 'title',     label: 'Título' },
   { value: 'createdAt', label: 'Fecha de Creación' },
   { value: 'updatedAt', label: 'Fecha de Modificación' },
+  { value: 'title',     label: 'Título' },
+  { value: 'id',        label: 'ID' },
 ]
 
 export default function AnunciosPage() {
