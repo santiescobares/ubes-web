@@ -33,4 +33,12 @@ public interface CompetitionRepository extends JpaRepository<Competition, Long> 
 
     List<Competition> findAllByStatusAndEndingDateBefore(
             CompetitionStatus status, LocalDateTime now);
+
+    @Query("""
+        SELECT c FROM Competition c
+        WHERE c.status IN ('SCHEDULED', 'ONGOING')
+        AND c.endingDate >= :now
+        ORDER BY c.startingDate ASC
+    """)
+    List<Competition> findUpcomingCompetitions(@Param("now") LocalDateTime now, Pageable pageable);
 }

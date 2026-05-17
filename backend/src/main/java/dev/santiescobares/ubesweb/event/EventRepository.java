@@ -1,5 +1,6 @@
 package dev.santiescobares.ubesweb.event;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -10,6 +11,14 @@ import java.util.List;
 public interface EventRepository extends JpaRepository<Event, Long> {
 
     List<Event> findAllByStartingDateAfterAndEndingDateBefore(LocalDateTime startingDate, LocalDateTime endingDate);
+
+    @Query("""
+        SELECT e FROM Event e
+        WHERE TYPE(e) != dev.santiescobares.ubesweb.competition.entity.Competition
+        AND e.endingDate >= :now
+        ORDER BY e.startingDate ASC
+    """)
+    List<Event> findUpcomingEvents(@Param("now") LocalDateTime now, Pageable pageable);
 
     @Query("""
         SELECT e FROM Event e

@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -22,6 +23,21 @@ public interface PunishmentRepository extends JpaRepository<Punishment, Long> {
             @Param("targetId") UUID targetId,
             @Param("now") LocalDateTime now
     );
+
+    @Query("""
+        SELECT COUNT(p) FROM Punishment p
+        WHERE p.removedAt IS NULL
+        AND (p.expiresAt IS NULL OR p.expiresAt > :now)
+    """)
+    long countActivePunishments(@Param("now") LocalDateTime now);
+
+    @Query("""
+        SELECT COUNT(p) FROM Punishment p
+        WHERE p.createdAt <= :asOf
+        AND (p.removedAt IS NULL OR p.removedAt > :asOf)
+        AND (p.expiresAt IS NULL OR p.expiresAt > :asOfLdt)
+    """)
+    long countActivePunishmentsAsOf(@Param("asOf") Instant asOf, @Param("asOfLdt") LocalDateTime asOfLdt);
 
     @EntityGraph(attributePaths = {"target", "issuedBy", "removedBy"})
     @Query("""
