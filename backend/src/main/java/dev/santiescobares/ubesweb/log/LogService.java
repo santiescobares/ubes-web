@@ -55,8 +55,8 @@ public class LogService {
     }
 
     @Transactional(readOnly = true)
-    public Page<LogDTO> findLogDTOs(UUID userId, ResourceType resourceType, String resourceId, Action action, Pageable pageable) {
-        return logRepository.findLogsByFilters(userId, resourceType, resourceId, action, pageable).map(logMapper::toDTO);
+    public Page<LogDTO> findLogDTOs(Long id, UUID userId, ResourceType resourceType, String resourceId, Action action, Instant from, Instant to, Pageable pageable) {
+        return logRepository.findLogsByFilters(id, userId, resourceType, resourceId, action, from, to, pageable).map(logMapper::toDTO);
     }
 
     @Transactional(readOnly = true)

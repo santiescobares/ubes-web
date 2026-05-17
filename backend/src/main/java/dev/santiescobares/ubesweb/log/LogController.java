@@ -12,6 +12,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @RestController
@@ -28,12 +29,15 @@ public class LogController {
 
     @GetMapping
     public ResponseEntity<Page<LogDTO>> getAll(
+            @RequestParam(required = false) Long id,
             @RequestParam(required = false) UUID userId,
             @RequestParam(required = false) ResourceType resourceType,
             @RequestParam(required = false) String resourceId,
             @RequestParam(required = false) Action action,
+            @RequestParam(required = false) Instant from,
+            @RequestParam(required = false) Instant to,
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        return ResponseEntity.ok(logService.findLogDTOs(userId, resourceType, resourceId, action, pageable));
+        return ResponseEntity.ok(logService.findLogDTOs(id, userId, resourceType, resourceId, action, from, to, pageable));
     }
 }

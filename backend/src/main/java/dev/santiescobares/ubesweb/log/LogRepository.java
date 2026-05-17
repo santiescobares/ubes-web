@@ -16,16 +16,22 @@ public interface LogRepository extends JpaRepository<Log, Long> {
 
     @Query("""
         SELECT l FROM Log l
-        WHERE (cast(:userId as uuid) IS NULL OR l.user.id = :userId)
+        WHERE (:id IS NULL OR l.id = :id)
+        AND (cast(:userId as uuid) IS NULL OR l.user.id = :userId)
         AND (:resourceType IS NULL OR l.resourceType = :resourceType)
         AND (:resourceId IS NULL OR l.resourceId = :resourceId)
         AND (:action IS NULL OR l.action = :action)
+        AND (cast(:from as timestamp) IS NULL OR l.createdAt >= :from)
+        AND (cast(:to as timestamp) IS NULL OR l.createdAt <= :to)
     """)
     Page<Log> findLogsByFilters(
+            @Param("id") Long id,
             @Param("userId") UUID userId,
             @Param("resourceType") ResourceType resourceType,
             @Param("resourceId") String resourceId,
             @Param("action") Action action,
+            @Param("from") Instant from,
+            @Param("to") Instant to,
             Pageable pageable
     );
 

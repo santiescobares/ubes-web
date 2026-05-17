@@ -20,6 +20,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -132,10 +133,10 @@ class LogServiceTest {
         PageRequest pageable = PageRequest.of(0, 10);
         Page<Log> page = new PageImpl<>(List.of(log));
 
-        when(logRepository.findLogsByFilters(null, null, null, null, pageable)).thenReturn(page);
+        when(logRepository.findLogsByFilters(null, null, null, null, null, null, null, pageable)).thenReturn(page);
         when(logMapper.toDTO(log)).thenReturn(logDTO);
 
-        Page<LogDTO> result = logService.findLogDTOs(null, null, null, null, pageable);
+        Page<LogDTO> result = logService.findLogDTOs(null, null, null, null, null, null, null, pageable);
 
         assertThat(result.getContent()).containsExactly(logDTO);
     }
@@ -146,12 +147,27 @@ class LogServiceTest {
         PageRequest pageable = PageRequest.of(0, 10);
         Page<Log> page = new PageImpl<>(List.of());
 
-        when(logRepository.findLogsByFilters(userId, ResourceType.USER, "user-1", Action.CREATE, pageable))
+        when(logRepository.findLogsByFilters(1L, userId, ResourceType.USER, "user-1", Action.CREATE, null, null, pageable))
                 .thenReturn(page);
 
-        Page<LogDTO> result = logService.findLogDTOs(userId, ResourceType.USER, "user-1", Action.CREATE, pageable);
+        Page<LogDTO> result = logService.findLogDTOs(1L, userId, ResourceType.USER, "user-1", Action.CREATE, null, null, pageable);
 
         assertThat(result.getContent()).isEmpty();
-        verify(logRepository).findLogsByFilters(userId, ResourceType.USER, "user-1", Action.CREATE, pageable);
+        verify(logRepository).findLogsByFilters(1L, userId, ResourceType.USER, "user-1", Action.CREATE, null, null, pageable);
+    }
+
+    @Test
+    void findLogDTOs_withDateRange_delegatesDateRangeToRepository() {
+        Instant from = Instant.parse("2026-05-16T00:00:00Z");
+        Instant to = Instant.parse("2026-05-16T23:59:59Z");
+        PageRequest pageable = PageRequest.of(0, 10);
+        Page<Log> page = new PageImpl<>(List.of());
+
+        when(logRepository.findLogsByFilters(null, null, null, null, null, from, to, pageable)).thenReturn(page);
+
+        Page<LogDTO> result = logService.findLogDTOs(null, null, null, null, null, from, to, pageable);
+
+        assertThat(result.getContent()).isEmpty();
+        verify(logRepository).findLogsByFilters(null, null, null, null, null, from, to, pageable);
     }
 }
