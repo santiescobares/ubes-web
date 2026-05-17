@@ -109,11 +109,13 @@ export const ResourceType = {
   POST: 'POST',
   EVENT: 'EVENT',
   COMPETITION: 'COMPETITION',
-  PARTICIPANT: 'PARTICIPANT',
-  RESULT: 'RESULT',
+  COMPETITION_PARTICIPANT: 'COMPETITION_PARTICIPANT',
+  COMPETITION_RESULT: 'COMPETITION_RESULT',
   SUGGESTION: 'SUGGESTION',
+  SUGGESTION_VOTE: 'SUGGESTION_VOTE',
   PUNISHMENT: 'PUNISHMENT',
   DOCUMENT: 'DOCUMENT',
+  LOG: 'LOG',
 } as const
 export type ResourceType = (typeof ResourceType)[keyof typeof ResourceType]
 
@@ -121,8 +123,10 @@ export const Action = {
   CREATE: 'CREATE',
   UPDATE: 'UPDATE',
   DELETE: 'DELETE',
-  LOGIN: 'LOGIN',
-  LOGOUT: 'LOGOUT',
-  STATE_CHANGE: 'STATE_CHANGE',
+  ROLL_BACK: 'ROLL_BACK',
+  LOG_IN: 'LOG_IN',
+  LOG_OUT: 'LOG_OUT',
+  ADD: 'ADD',
+  REMOVE: 'REMOVE',
 } as const
 export type Action = (typeof Action)[keyof typeof Action]

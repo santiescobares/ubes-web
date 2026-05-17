@@ -1,4 +1,4 @@
-import { format, formatDistanceStrict, parseISO } from 'date-fns'
+import { format, formatDistanceStrict, parse, parseISO, startOfDay, endOfDay } from 'date-fns'
 import { es } from 'date-fns/locale'
 import type { CompetitionDTO } from '@ubes/types'
 
@@ -62,5 +62,30 @@ export function formatSelectedDayHeader(date: Date): string {
     return format(date, "EEEE, d 'de' MMMM yyyy", { locale: es })
   } catch {
     return '—'
+  }
+}
+
+export function formatLogDateTime(value: string | null | undefined): string {
+  if (!value) return '—'
+  try {
+    return format(parseISO(value), 'dd-MM-yyyy hh:mm:ss a', { locale: es })
+      .toUpperCase()
+      .replace(/\./g, '')
+  } catch {
+    return '—'
+  }
+}
+
+export function parseDdMmYyyyToInstantRange(input: string): { from: string; to: string } | null {
+  if (!/^\d{2}-\d{2}-\d{4}$/.test(input)) return null
+  try {
+    const date = parse(input, 'dd-MM-yyyy', new Date())
+    if (isNaN(date.getTime())) return null
+    return {
+      from: startOfDay(date).toISOString(),
+      to: endOfDay(date).toISOString(),
+    }
+  } catch {
+    return null
   }
 }
