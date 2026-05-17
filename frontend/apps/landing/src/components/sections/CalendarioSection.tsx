@@ -1,17 +1,60 @@
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { format, parseISO, startOfDay } from 'date-fns'
+import { es } from 'date-fns/locale'
+import type { EventDTO } from '@ubes/types'
+import { listEvents } from '@/services/eventService'
+
+function truncateDesc(text: string, maxLines = 2): string {
+  const words = text.split(' ')
+  let result = ''
+  let lines = 1
+  for (const word of words) {
+    const candidate = result ? result + ' ' + word : word
+    if (candidate.length > 72 * lines) {
+      lines++
+      if (lines > maxLines) return result.trimEnd() + '...'
+    }
+    result = candidate
+  }
+  return result
+}
+
+function formatStartTime(iso: string): string {
+  try {
+    return format(parseISO(iso), 'h:mm aa', { locale: es }).toUpperCase().replace(/\./g, '')
+  } catch {
+    return '—'
+  }
+}
+
+function formatDayNumber(iso: string): string {
+  try { return format(parseISO(iso), 'd') } catch { return '—' }
+}
+
+function formatMonthAbbr(iso: string): string {
+  try { return format(parseISO(iso), 'MMM', { locale: es }).toUpperCase().replace('.', '') } catch { return '—' }
+}
+
+function calendarDateLink(iso: string): string {
+  try { return `/calendario?date=${format(startOfDay(parseISO(iso)), 'yyyy-MM-dd')}` } catch { return '/calendario' }
+}
+
 export default function CalendarioSection() {
+  const [events, setEvents] = useState<EventDTO[]>([])
+
+  useEffect(() => {
+    listEvents({ from: new Date().toISOString() })
+      .then(data => setEvents(data.slice(0, 5)))
+      .catch(() => {})
+  }, [])
+
   const moreLinkBase = {
     marginTop: '18px', display: 'inline-flex', alignItems: 'center', gap: '8px',
     fontFamily: 'var(--font-head)', fontWeight: 900, fontSize: '13px',
     textTransform: 'uppercase' as const, letterSpacing: '0.06em',
     textDecoration: 'none', transition: 'color 0.15s',
   }
-
-  const EVENTS = [
-    { month: 'OCT', day: '18', title: 'Apertura Torneo de Fútbol', desc: 'Inicio oficial del torneo masculino y femenino. Todos los equipos deben presentar planteles confirmados.', time: '09:00 hs', place: 'Estadio Municipal' },
-    { month: 'OCT', day: '24', title: 'Cierre de listas: Handball', desc: 'Límite para cargar fichas médicas y alumnos regulares en el sistema.', time: '23:59 hs', place: 'Plataforma Web' },
-    { month: 'NOV', day: '05', title: 'Asamblea General de Delegados', desc: 'Votación de sugerencias comunitarias y revisión de sanciones.', time: '19:30 hs', place: 'Sede UBES' },
-    { month: 'NOV', day: '22', title: 'Baile de Egreso 2026', desc: 'El evento más esperado del año. Inscripción abierta para egresados.', time: '21:00 hs', place: 'Por confirmar' },
-  ]
 
   const ANNOUNCEMENTS = [
     {
@@ -57,36 +100,46 @@ export default function CalendarioSection() {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {EVENTS.map(ev => (
-              <div className="event" key={ev.title}>
+            {events.map(ev => (
+              <Link
+                className="event"
+                key={ev.id}
+                to={calendarDateLink(ev.startingDate)}
+                style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
+              >
                 <div className="event-date">
-                  <span className="month">{ev.month}</span>
-                  <span className="day">{ev.day}</span>
+                  <span className="month">{formatMonthAbbr(ev.startingDate)}</span>
+                  <span className="day">{formatDayNumber(ev.startingDate)}</span>
                 </div>
                 <div style={{ padding: '12px 18px', flex: 1 }}>
-                  <div style={{ fontFamily: 'var(--font-head)', fontWeight: 900, fontSize: '16px', marginBottom: '3px' }}>{ev.title}</div>
-                  <div style={{ fontSize: '12px', color: '#666', fontWeight: 500, lineHeight: 1.5, marginBottom: '7px' }}>{ev.desc}</div>
+                  <div style={{ fontFamily: 'var(--font-head)', fontWeight: 900, fontSize: '16px', marginBottom: '3px' }}>{ev.name}</div>
+                  {ev.description && (
+                    <div style={{ fontSize: '12px', color: '#666', fontWeight: 500, lineHeight: 1.5, marginBottom: '7px' }}>{truncateDesc(ev.description)}</div>
+                  )}
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '11px', color: '#888', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
-                      {ev.time}
+                      {formatStartTime(ev.startingDate)}
                     </span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" /><circle cx="12" cy="10" r="3" /></svg>
-                      {ev.place}
-                    </span>
+                    {ev.location && (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" /><circle cx="12" cy="10" r="3" /></svg>
+                        {ev.location.name}
+                      </span>
+                    )}
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
 
-          <a
-            href="#"
+          <Link
+            to="/calendario"
             style={{ ...moreLinkBase, color: 'var(--red-strong)' }}
+            onClick={() => window.scrollTo({ top: 0, behavior: 'instant' })}
             onMouseOver={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--ink)' }}
             onMouseOut={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--red-strong)' }}
-          >Ver calendario completo →</a>
+          >Ver calendario completo →</Link>
         </div>
 
         {/* ── Anuncios ── */}

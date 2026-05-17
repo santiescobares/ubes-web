@@ -1,6 +1,15 @@
 import { useState, useEffect } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import logoImg from '@/assets/logo.png'
 import MobileMenu from './MobileMenu'
+
+function NavAnchorLink({ hash, className, style, children }: { hash: string; className: string; style?: React.CSSProperties; children: React.ReactNode }) {
+  const { pathname } = useLocation()
+  if (pathname === '/') {
+    return <a href={`#${hash}`} className={className} style={style}>{children}</a>
+  }
+  return <Link to={`/#${hash}`} className={className} style={style}>{children}</Link>
+}
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -31,7 +40,7 @@ export default function Navbar() {
       >
         <div className="wrap" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           {/* Logo */}
-          <a href="#inicio" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', color: 'var(--ink)' }}>
+          <NavAnchorLink hash="inicio" className="" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', color: 'var(--ink)' }}>
             <img
               src={logoImg}
               alt="UBES"
@@ -42,16 +51,16 @@ export default function Navbar() {
             <span style={{ fontFamily: 'var(--font-head)', fontWeight: 900, fontSize: '22px', letterSpacing: '-0.04em' }}>
               UBES<span style={{ color: '#FACC15' }}>.</span>
             </span>
-          </a>
+          </NavAnchorLink>
 
           {/* Desktop links */}
           <div className="hide-md" style={{ alignItems: 'center', gap: '24px' }}>
-            <a href="#inicio" className="nav-link y">Inicio</a>
-            <a href="#calendario" className="nav-link r">Calendario</a>
-            <a href="#novedades" className="nav-link b">Novedades</a>
-            <a href="#buzon" className="nav-link o">Buzón de Ideas</a>
-            <a href="#historicos" className="nav-link g">Históricos</a>
-            <a href="#informacion" className="nav-link p">Información</a>
+            <NavAnchorLink hash="inicio" className="nav-link y">Inicio</NavAnchorLink>
+            <Link to="/calendario" className="nav-link r">Calendario</Link>
+            <NavAnchorLink hash="novedades" className="nav-link b">Novedades</NavAnchorLink>
+            <NavAnchorLink hash="buzon" className="nav-link o">Buzón de Ideas</NavAnchorLink>
+            <NavAnchorLink hash="historicos" className="nav-link g">Históricos</NavAnchorLink>
+            <NavAnchorLink hash="informacion" className="nav-link p">Información</NavAnchorLink>
           </div>
 
           {/* Desktop login */}
