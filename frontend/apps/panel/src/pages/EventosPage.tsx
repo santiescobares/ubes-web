@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react'
-import { startOfMonth, startOfDay, parseISO, addMonths, subMonths, endOfMonth } from 'date-fns'
+import { useSearchParams } from 'react-router-dom'
+import { startOfMonth, startOfDay, parseISO, addMonths, subMonths, endOfMonth, parse, isValid } from 'date-fns'
 import { Search, X } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { canManageEvents } from '@/lib/roleUtils'
@@ -17,6 +18,7 @@ type ModalState =
 
 export default function EventosPage() {
   const user = useAuthStore(s => s.user)
+  const [searchParams] = useSearchParams()
   const today = useMemo(() => new Date(), [])
 
   const [visibleMonth, setVisibleMonth] = useState(startOfMonth(today))
@@ -29,6 +31,19 @@ export default function EventosPage() {
   const [modal, setModal] = useState<ModalState>(null)
 
   const triggerRefetch = useCallback(() => setFetchKey(k => k + 1), [])
+
+  useEffect(() => {
+    const dateParam = searchParams.get('date')
+    if (dateParam) {
+      try {
+        const parsed = parse(dateParam, 'yyyy-MM-dd', new Date())
+        if (isValid(parsed)) {
+          setSelectedDate(parsed)
+          setVisibleMonth(startOfMonth(parsed))
+        }
+      } catch { /* ignore */ }
+    }
+  }, [searchParams])
 
   // Fetch ventana de 6 meses cuando NO hay búsqueda activa
   useEffect(() => {

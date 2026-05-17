@@ -34,6 +34,7 @@ interface Props {
   existingBannerURL?: string | null
   removeBanner: boolean
   onRemoveBanner: (v: boolean) => void
+  readOnly?: boolean
 }
 
 // Event types available for selection (COMPETITION managed separately)
@@ -62,6 +63,7 @@ export default function EventForm({
   form, errors, onChange,
   bannerFile, onBannerChange,
   existingBannerURL, removeBanner, onRemoveBanner,
+  readOnly = false,
 }: Props) {
   const bannerInputRef = useRef<HTMLInputElement>(null)
   const showBannerPreview = !removeBanner && !!existingBannerURL && !bannerFile
@@ -71,7 +73,7 @@ export default function EventForm({
       {/* Row 1: Name + Type */}
       <div className="event-form-name-row">
         <div className="form-field" style={{ flex: 1 }}>
-          <label className="form-label">Nombre <span className="required">*</span></label>
+          <label className="form-label">Nombre {!readOnly && <span className="required">*</span>}</label>
           <input
             className={`form-input${errors.name ? ' form-input--error' : ''}`}
             type="text"
@@ -79,20 +81,32 @@ export default function EventForm({
             value={form.name}
             onChange={e => onChange({ name: e.target.value })}
             maxLength={50}
+            readOnly={readOnly}
+            disabled={readOnly}
           />
           {errors.name && <span className="form-error">{errors.name}</span>}
         </div>
         <div className="form-field event-form-type">
           <label className="form-label">Tipo</label>
-          <select
-            className={`form-input${errors.type ? ' form-input--error' : ''}`}
-            value={form.type}
-            onChange={e => onChange({ type: e.target.value as EventType })}
-          >
-            {SELECTABLE_TYPES.map(t => (
-              <option key={t} value={t}>{EVENT_TYPE_META[t].label}</option>
-            ))}
-          </select>
+          {readOnly ? (
+            <input
+              className="form-input"
+              type="text"
+              value={EVENT_TYPE_META[form.type]?.label ?? form.type}
+              readOnly
+              disabled
+            />
+          ) : (
+            <select
+              className={`form-input${errors.type ? ' form-input--error' : ''}`}
+              value={form.type}
+              onChange={e => onChange({ type: e.target.value as EventType })}
+            >
+              {SELECTABLE_TYPES.map(t => (
+                <option key={t} value={t}>{EVENT_TYPE_META[t].label}</option>
+              ))}
+            </select>
+          )}
           {errors.type && <span className="form-error">{errors.type}</span>}
         </div>
       </div>
@@ -107,6 +121,8 @@ export default function EventForm({
           onChange={e => onChange({ description: e.target.value })}
           rows={3}
           maxLength={1000}
+          readOnly={readOnly}
+          disabled={readOnly}
         />
         {errors.description && <span className="form-error">{errors.description}</span>}
       </div>
@@ -114,22 +130,26 @@ export default function EventForm({
       {/* Dates */}
       <div className="form-row">
         <div className="form-field">
-          <label className="form-label">Fecha de inicio <span className="required">*</span></label>
+          <label className="form-label">Fecha de inicio {!readOnly && <span className="required">*</span>}</label>
           <input
             className={`form-input${errors.startingDate ? ' form-input--error' : ''}`}
             type="datetime-local"
             value={form.startingDate}
             onChange={e => onChange({ startingDate: e.target.value })}
+            readOnly={readOnly}
+            disabled={readOnly}
           />
           {errors.startingDate && <span className="form-error">{errors.startingDate}</span>}
         </div>
         <div className="form-field">
-          <label className="form-label">Fecha de fin <span className="required">*</span></label>
+          <label className="form-label">Fecha de fin {!readOnly && <span className="required">*</span>}</label>
           <input
             className={`form-input${errors.endingDate ? ' form-input--error' : ''}`}
             type="datetime-local"
             value={form.endingDate}
             onChange={e => onChange({ endingDate: e.target.value })}
+            readOnly={readOnly}
+            disabled={readOnly}
           />
           {errors.endingDate && <span className="form-error">{errors.endingDate}</span>}
         </div>
@@ -141,6 +161,7 @@ export default function EventForm({
         <LocationMapPicker
           value={{ latitude: form.latitude, longitude: form.longitude }}
           onChange={({ latitude, longitude }) => onChange({ latitude, longitude })}
+          disabled={readOnly}
         />
       </div>
 
@@ -154,6 +175,8 @@ export default function EventForm({
           value={form.locationName}
           onChange={e => onChange({ locationName: e.target.value })}
           maxLength={100}
+          readOnly={readOnly}
+          disabled={readOnly}
         />
         {errors.locationName && <span className="form-error">{errors.locationName}</span>}
       </div>
@@ -172,18 +195,24 @@ export default function EventForm({
               ) : (
                 <span style={{ fontSize: 12, color: 'var(--muted)' }}>{bannerFile!.name}</span>
               )}
-              <button type="button" className="btn btn-ghost" style={{ fontSize: 12, padding: '4px 10px' }} onClick={() => bannerInputRef.current?.click()}>
-                <Pencil size={11} /> Cambiar
-              </button>
-              {showBannerPreview && (
+              {!readOnly && (
+                <button type="button" className="btn btn-ghost" style={{ fontSize: 12, padding: '4px 10px' }} onClick={() => bannerInputRef.current?.click()}>
+                  <Pencil size={11} /> Cambiar
+                </button>
+              )}
+              {!readOnly && showBannerPreview && (
                 <button type="button" className="btn btn-ghost" style={{ fontSize: 12, padding: '4px 10px', color: 'var(--red-strong)' }} onClick={() => onRemoveBanner(true)}>
                   <Trash2 size={11} />
                 </button>
               )}
             </div>
-            <input ref={bannerInputRef} type="file" accept=".png,.jpg,.jpeg,.webp" style={{ display: 'none' }}
-              onChange={e => { const f = e.target.files?.[0]; if (f) { onBannerChange(f); onRemoveBanner(false) }; e.target.value = '' }} />
+            {!readOnly && (
+              <input ref={bannerInputRef} type="file" accept=".png,.jpg,.jpeg,.webp" style={{ display: 'none' }}
+                onChange={e => { const f = e.target.files?.[0]; if (f) { onBannerChange(f); onRemoveBanner(false) }; e.target.value = '' }} />
+            )}
           </div>
+        ) : readOnly ? (
+          <span style={{ fontSize: 13, color: 'var(--muted)' }}>Sin banner</span>
         ) : (
           <FileDropzone
             accept={['png', 'jpg', 'jpeg', 'webp']}

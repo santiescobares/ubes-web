@@ -1,4 +1,4 @@
-import { format, formatDistanceStrict, parse, parseISO, startOfDay, endOfDay } from 'date-fns'
+import { format, formatDistanceStrict, parse, parseISO, startOfDay, endOfDay, startOfMonth } from 'date-fns'
 import { es } from 'date-fns/locale'
 import type { CompetitionDTO } from '@ubes/types'
 
@@ -75,6 +75,43 @@ export function formatLogDateTime(value: string | null | undefined): string {
     return '—'
   }
 }
+
+export function formatDashboardDayHeader(date: Date): string {
+  try {
+    const str = format(date, "EEEE, d 'de' MMMM", { locale: es })
+    return str.charAt(0).toUpperCase() + str.slice(1)
+  } catch {
+    return '—'
+  }
+}
+
+export function formatYear(date: Date): string {
+  return format(date, 'yyyy')
+}
+
+export function formatCountdown(startingDate: string, endingDate: string, isActive: boolean): string {
+  try {
+    const now = new Date()
+    if (isActive) {
+      const end = parseISO(endingDate)
+      return `Termina en ${formatDistanceStrict(now, end, { locale: es })}`
+    }
+    const start = parseISO(startingDate)
+    return `Comienza en ${formatDistanceStrict(now, start, { locale: es })}`
+  } catch {
+    return '—'
+  }
+}
+
+export function formatDayMonth(iso: string): string {
+  try {
+    return format(parseISO(iso), 'dd-MM')
+  } catch {
+    return '—'
+  }
+}
+
+export { startOfMonth }
 
 export function parseDdMmYyyyToInstantRange(input: string): { from: string; to: string } | null {
   if (!/^\d{2}-\d{2}-\d{4}$/.test(input)) return null

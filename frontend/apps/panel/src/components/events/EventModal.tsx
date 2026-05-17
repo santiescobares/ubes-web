@@ -70,6 +70,7 @@ function buildLocation(form: EventFormState) {
 export default function EventModal(props: Props) {
   const currentEvent = isEdit(props) ? props.event : null
   const isCreate = props.mode === 'create'
+  const isCompetition = isEdit(props) && props.event.type === EventType.COMPETITION
 
   const baseDate = !isEdit(props) ? props.baseDate : undefined
   const [form, setForm] = useState<EventFormState>(currentEvent ? eventToForm(currentEvent) : buildEmptyForm(baseDate))
@@ -188,6 +189,7 @@ export default function EventModal(props: Props) {
               existingBannerURL={existingBannerURL}
               removeBanner={removeBanner}
               onRemoveBanner={setRemoveBanner}
+              readOnly={isCompetition}
             />
           </div>
 
@@ -200,7 +202,12 @@ export default function EventModal(props: Props) {
               </button>
             </div>
           )}
-          {!isCreate && (
+          {!isCreate && isCompetition && (
+            <div className="modal-form-footer">
+              <button type="button" className="btn btn-ghost" onClick={props.onClose}>Cerrar</button>
+            </div>
+          )}
+          {!isCreate && !isCompetition && (
             <div className="modal-form-footer" style={{ justifyContent: 'space-between' }}>
               <button type="button" className="btn btn-danger" onClick={() => setConfirmDelete(true)} disabled={submitting}>
                 <Trash2 size={13} /> Eliminar
