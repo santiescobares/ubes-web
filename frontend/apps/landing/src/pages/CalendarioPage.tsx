@@ -63,9 +63,6 @@ export default function CalendarioPage() {
 
   function handleSelectDate(date: Date | null) {
     setSelectedDate(date)
-    if (date && window.innerWidth < 1024) {
-      setTimeout(() => sidebarRef.current?.scrollIntoView({ behavior: 'instant', block: 'start' }), 50)
-    }
   }
 
   function handleChangeMonth(month: Date) {

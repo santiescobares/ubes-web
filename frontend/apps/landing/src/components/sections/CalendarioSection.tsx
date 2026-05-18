@@ -2,8 +2,11 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { format, parseISO, startOfDay } from 'date-fns'
 import { es } from 'date-fns/locale'
-import type { EventDTO } from '@ubes/types'
+import type { EventDTO, PostDTO } from '@ubes/types'
 import { listEvents } from '@/services/eventService'
+import { listPosts } from '@/services/postService'
+import AnuncioCard from '@/components/posts/AnuncioCard'
+import PostModal from '@/components/posts/PostModal'
 
 function truncateDesc(text: string, maxLines = 2): string {
   const words = text.split(' ')
@@ -42,10 +45,15 @@ function calendarDateLink(iso: string): string {
 
 export default function CalendarioSection() {
   const [events, setEvents] = useState<EventDTO[]>([])
+  const [posts, setPosts] = useState<PostDTO[]>([])
+  const [selectedPost, setSelectedPost] = useState<PostDTO | null>(null)
 
   useEffect(() => {
     listEvents({ from: new Date().toISOString() })
       .then(data => setEvents(data.slice(0, 5)))
+      .catch(() => {})
+    listPosts({ page: 0, size: 3 })
+      .then(data => setPosts(data.content))
       .catch(() => {})
   }, [])
 
@@ -56,28 +64,8 @@ export default function CalendarioSection() {
     textDecoration: 'none', transition: 'color 0.15s',
   }
 
-  const ANNOUNCEMENTS = [
-    {
-      tag: 'Comunicado Oficial', tagStyle: { color: '#1d4ed8', background: '#DBEAFE', borderColor: '#93C5FD' },
-      title: 'Actualización del Reglamento Deportivo',
-      body: 'Ya se encuentra publicado el documento PDF con los cambios aprobados en la última asamblea respecto a las sanciones en voley y fútbol.',
-      time: 'Hace 2 horas', highlight: true,
-    },
-    {
-      tag: 'Resultados', tagStyle: { color: '#15803d', background: '#DCFCE7', borderColor: '#86EFAC' },
-      title: '¡Finalizó la jornada de Atletismo!',
-      body: 'Felicitamos a todos los participantes. Ya están cargados los puntajes oficiales y la tabla general de posiciones actualizada.',
-      time: 'Ayer, 20:15 hs', highlight: false,
-    },
-    {
-      tag: 'Convocatoria', tagStyle: { color: '#92400e', background: '#FEF3C7', borderColor: '#FCD34D' },
-      title: 'Inscripción abierta — Torneo de Básquet',
-      body: 'Los delegados deben cargar los planteles antes del 28 de octubre. Máximo 12 jugadores por equipo.',
-      time: 'Hace 3 días', highlight: false,
-    },
-  ]
-
   return (
+    <>
     <section style={{ padding: '88px 0', position: 'relative', zIndex: 1 }} id="calendario">
       <div className="wrap" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '64px' }} id="cn-grid">
 
@@ -161,28 +149,30 @@ export default function CalendarioSection() {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {ANNOUNCEMENTS.map(ann => (
-              <div className="anuncio" key={ann.title}>
-                {ann.highlight && (
-                  <div style={{ position: 'absolute', top: '-12px', right: '-12px', width: '32px', height: '32px', background: 'var(--yellow)', border: '2px solid var(--ink)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-head)', fontWeight: 900, fontSize: '16px' }} className="bounce">!</div>
-                )}
-                <span className="tag" style={ann.tagStyle}>{ann.tag}</span>
-                <div style={{ fontFamily: 'var(--font-head)', fontWeight: 900, fontSize: '19px', marginBottom: '6px', lineHeight: 1.25 }}>{ann.title}</div>
-                <p style={{ fontSize: '14px', color: '#666', fontWeight: 500, lineHeight: 1.6, marginBottom: '14px' }}>{ann.body}</p>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: '#aaa', fontWeight: 700 }}>{ann.time}</span>
-              </div>
+            {posts.length === 0 && (
+              <p style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: '#aaa', fontWeight: 700 }}>
+                No hay anuncios por ahora.
+              </p>
+            )}
+            {posts.map(post => (
+              <AnuncioCard key={post.id} post={post} onOpen={() => setSelectedPost(post)} />
             ))}
           </div>
 
-          <a
-            href="#"
+          <Link
+            to="/novedades"
             style={{ ...moreLinkBase, color: 'var(--blue-strong)' }}
+            onClick={() => window.scrollTo({ top: 0, behavior: 'instant' })}
             onMouseOver={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--ink)' }}
             onMouseOut={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--blue-strong)' }}
-          >Ver todas las novedades →</a>
+          >Ver todas las novedades →</Link>
         </div>
 
       </div>
     </section>
+
+    {selectedPost && <PostModal post={selectedPost} onClose={() => setSelectedPost(null)} />}
+    </>
   )
 }
+

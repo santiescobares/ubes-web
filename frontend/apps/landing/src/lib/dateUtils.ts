@@ -2,7 +2,7 @@
 // as local browser time. This is correct for Argentina (UTC-3) as long as the backend
 // stores and returns times in local time. If the backend ever switches to OffsetDateTime
 // (UTC), dates will drift 3 hours — revisit with zonedTimeToUtc from date-fns-tz.
-import { format, isSameDay, parseISO } from 'date-fns'
+import { format, formatDistanceToNow, isSameDay, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
 
 export function formatEventHourRange(start: string, end: string): string {
@@ -51,4 +51,38 @@ export function formatEventTimeRangeMultiDay(start: string, end: string): string
   } catch {
     return '—'
   }
+}
+
+export function formatPostDayLabel(iso: string): string {
+  const d = parseISO(iso)
+  const base = format(d, "d 'de' MMMM", { locale: es })
+  const year = d.getFullYear()
+  return year === new Date().getFullYear() ? base : `${base}, ${year}`
+}
+
+export function formatPostTime(iso: string): string {
+  return format(parseISO(iso), 'hh:mm a', { locale: es }).toUpperCase().replace(/\./g, '')
+}
+
+export function formatPostDateTime(iso: string): string {
+  return `${format(parseISO(iso), 'dd-MM-yyyy')} ${formatPostTime(iso)}`
+}
+
+export function formatTimeAgo(iso: string): string {
+  try {
+    return formatDistanceToNow(parseISO(iso), { locale: es, addSuffix: false })
+  } catch {
+    return '—'
+  }
+}
+
+export function groupPostsByDay<T extends { createdAt: string }>(posts: T[]): { dayKey: string; sample: string; items: T[] }[] {
+  const map = new Map<string, { sample: string; items: T[] }>()
+  for (const p of posts) {
+    const key = format(parseISO(p.createdAt), 'yyyy-MM-dd')
+    const bucket = map.get(key)
+    if (bucket) bucket.items.push(p)
+    else map.set(key, { sample: p.createdAt, items: [p] })
+  }
+  return Array.from(map.entries()).map(([dayKey, v]) => ({ dayKey, sample: v.sample, items: v.items }))
 }
