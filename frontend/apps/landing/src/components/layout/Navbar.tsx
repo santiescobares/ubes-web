@@ -57,7 +57,7 @@ export default function Navbar() {
           <div className="hide-md" style={{ alignItems: 'center', gap: '24px' }}>
             <NavAnchorLink hash="inicio" className="nav-link y">Inicio</NavAnchorLink>
             <Link to="/calendario" className="nav-link r">Calendario</Link>
-            <NavAnchorLink hash="novedades" className="nav-link b">Novedades</NavAnchorLink>
+            <Link to="/novedades" className="nav-link b">Novedades</Link>
             <NavAnchorLink hash="buzon" className="nav-link o">Buzón de Ideas</NavAnchorLink>
             <NavAnchorLink hash="historicos" className="nav-link g">Históricos</NavAnchorLink>
             <NavAnchorLink hash="informacion" className="nav-link p">Información</NavAnchorLink>

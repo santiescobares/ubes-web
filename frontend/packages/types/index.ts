@@ -1,4 +1,5 @@
 export * from './enums'
+export * from './page.types'
 export * from './auth.types'
 export * from './user.types'
 export * from './post.types'

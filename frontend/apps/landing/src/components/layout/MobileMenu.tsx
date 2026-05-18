@@ -18,7 +18,7 @@ export default function MobileMenu({ open, onClose }: MobileMenuProps) {
     <div className={`mobile-menu${open ? ' open' : ''}`} id="mobile-menu">
       <MobileNavLink hash="inicio" onClose={onClose}>Inicio</MobileNavLink>
       <Link to="/calendario" onClick={onClose}>Calendario<span>→</span></Link>
-      <MobileNavLink hash="novedades" onClose={onClose}>Novedades</MobileNavLink>
+      <Link to="/novedades" onClick={onClose}>Novedades<span>→</span></Link>
       <MobileNavLink hash="buzon" onClose={onClose}>Buzón de Ideas</MobileNavLink>
       <MobileNavLink hash="historicos" onClose={onClose}>Históricos</MobileNavLink>
       <MobileNavLink hash="informacion" onClose={onClose}>Información</MobileNavLink>
