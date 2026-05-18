@@ -177,9 +177,9 @@ public class UserService {
             throw new InvalidOperationException("User is already deleted");
         }
 
-        userRepository.delete(user);
-
         eventPublisher.publishEvent(new UserDeleteEvent(RequestContextHolder.getCurrentSession().userId(), user, request, response));
+
+        userRepository.delete(user);
     }
 
     @Transactional

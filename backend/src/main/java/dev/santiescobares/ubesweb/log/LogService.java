@@ -12,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -29,7 +30,7 @@ public class LogService {
 
     private final LogMapper logMapper;
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void createLog(UUID userId, ResourceType resourceType, String resourceId, Action action, String details) {
         if (userId == null) {
             userId = Global.SYSTEM_UUID;
