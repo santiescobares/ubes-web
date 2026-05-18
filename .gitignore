@@ -8,6 +8,7 @@ CLAUDE.md
 
 ### Project ###
 /specs
+.env
 
 ### VS Code ###
 .vscode/
