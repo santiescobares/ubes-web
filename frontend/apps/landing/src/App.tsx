@@ -1,10 +1,16 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { Toaster } from 'sonner'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import LandingPage from '@/pages/LandingPage'
 import CalendarioPage from '@/pages/CalendarioPage'
 import NovedadesPage from '@/pages/NovedadesPage'
+import LoginModal from '@/components/auth/LoginModal'
+import RegisterModal from '@/components/auth/RegisterModal'
+import ProfileModal from '@/components/profile/ProfileModal'
+import DeleteAccountModal from '@/components/profile/DeleteAccountModal'
+import useAuthStore from '@/store/authStore'
 
 function ScrollToHash() {
   const location = useLocation()
@@ -20,6 +26,10 @@ function ScrollToHash() {
 }
 
 function App() {
+  useEffect(() => {
+    useAuthStore.getState().initialize()
+  }, [])
+
   return (
     <BrowserRouter>
       <div className="grid-bg" />
@@ -31,6 +41,11 @@ function App() {
         <Route path="/novedades" element={<NovedadesPage />} />
       </Routes>
       <Footer />
+      <LoginModal />
+      <RegisterModal />
+      <ProfileModal />
+      <DeleteAccountModal />
+      <Toaster richColors position="bottom-right" />
     </BrowserRouter>
   )
 }

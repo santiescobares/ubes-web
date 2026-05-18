@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import logoImg from '@/assets/logo.png'
 import MobileMenu from './MobileMenu'
+import useAuthModalStore from '@/store/authModalStore'
+import useAuthStore from '@/store/authStore'
+import UserMenu from '@/components/profile/UserMenu'
 
 function NavAnchorLink({ hash, className, style, children }: { hash: string; className: string; style?: React.CSSProperties; children: React.ReactNode }) {
   const { pathname } = useLocation()
@@ -14,6 +17,10 @@ function NavAnchorLink({ hash, className, style, children }: { hash: string; cla
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [inFooter, setInFooter] = useState(false)
+  const openLogin = useAuthModalStore(s => s.openLogin)
+  const user = useAuthStore(s => s.user)
+  const isAuthenticated = useAuthStore(s => s.isAuthenticated)
+  const isInitialized = useAuthStore(s => s.isInitialized)
 
   useEffect(() => {
     const footer = document.querySelector('footer')
@@ -63,24 +70,34 @@ export default function Navbar() {
             <NavAnchorLink hash="informacion" className="nav-link p">Información</NavAnchorLink>
           </div>
 
-          {/* Desktop login */}
+          {/* Desktop login / user menu */}
           <div className="hide-md" style={{ alignItems: 'center', gap: '14px' }}>
-            <a href="#" className="btn btn-outline" style={{ padding: '10px 22px', fontSize: '14px' }}>
-              Ingresar
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
-            </a>
+            {!isInitialized ? null
+              : isAuthenticated && user ? <UserMenu user={user} />
+              : (
+                <button type="button" onClick={openLogin} className="btn btn-outline" style={{ padding: '10px 22px', fontSize: '14px' }}>
+                  Ingresar
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </button>
+              )
+            }
           </div>
 
           {/* Mobile */}
           <div className="show-md" style={{ alignItems: 'center', gap: '10px' }}>
-            <a href="#" style={{
-              fontFamily: 'var(--font-head)', fontWeight: 900, fontSize: '13px',
-              border: '2px solid var(--ink)', padding: '7px 14px',
-              background: 'transparent', color: 'var(--ink)', textDecoration: 'none',
-              boxShadow: '2px 2px 0 var(--ink)',
-            }}>Ingresar</a>
+            {!isInitialized ? null
+              : isAuthenticated && user ? <UserMenu user={user} />
+              : (
+                <button type="button" onClick={openLogin} style={{
+                  fontFamily: 'var(--font-head)', fontWeight: 900, fontSize: '13px',
+                  border: '2px solid var(--ink)', padding: '7px 14px',
+                  background: 'transparent', color: 'var(--ink)', cursor: 'pointer',
+                  boxShadow: '2px 2px 0 var(--ink)',
+                }}>Ingresar</button>
+              )
+            }
             <button
               onClick={() => setMenuOpen(o => !o)}
               style={{
