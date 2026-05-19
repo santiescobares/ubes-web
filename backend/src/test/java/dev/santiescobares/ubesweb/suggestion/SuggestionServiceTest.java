@@ -7,6 +7,7 @@ import dev.santiescobares.ubesweb.exception.type.InvalidOperationException;
 import dev.santiescobares.ubesweb.exception.type.ResourceNotFoundException;
 import dev.santiescobares.ubesweb.suggestion.dto.SuggestionCreateDTO;
 import dev.santiescobares.ubesweb.suggestion.dto.SuggestionDTO;
+import dev.santiescobares.ubesweb.suggestion.dto.SuggestionsByDateDTO;
 import dev.santiescobares.ubesweb.suggestion.event.SuggestionCreateEvent;
 import dev.santiescobares.ubesweb.suggestion.event.SuggestionUpdateEvent;
 import dev.santiescobares.ubesweb.suggestion.event.SuggestionVoteEvent;
@@ -27,6 +28,8 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -34,7 +37,9 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -73,7 +78,7 @@ class SuggestionServiceTest {
 
         when(suggestionMapper.toEntity(dto)).thenReturn(suggestion);
         when(userService.getCurrentUser()).thenReturn(currentUser);
-        when(suggestionMapper.toDTO(suggestion, 0, 0)).thenReturn(suggestionDTO);
+        when(suggestionMapper.toDTO(suggestion, 0, 0, null)).thenReturn(suggestionDTO);
 
         SuggestionDTO result = suggestionService.createSuggestion(dto);
 
@@ -224,7 +229,8 @@ class SuggestionServiceTest {
 
         when(suggestionRepository.findAll(pageable)).thenReturn(page);
         when(suggestionVoteRepository.getVoteStatsBySuggestionIds(List.of(1L))).thenReturn(List.of());
-        when(suggestionMapper.toDTO(suggestion, 0, 0)).thenReturn(suggestionDTO);
+        when(suggestionVoteRepository.findUserVotesBySuggestionIds(any(UUID.class), anyList())).thenReturn(List.of());
+        when(suggestionMapper.toDTO(eq(suggestion), eq(0), eq(0), any())).thenReturn(suggestionDTO);
 
         Page<SuggestionDTO> result = suggestionService.getSuggestionDTOs(pageable);
 
@@ -245,7 +251,8 @@ class SuggestionServiceTest {
 
         when(suggestionRepository.findAllByHiddenAtIsNull(pageable)).thenReturn(page);
         when(suggestionVoteRepository.getVoteStatsBySuggestionIds(List.of(2L))).thenReturn(List.of());
-        when(suggestionMapper.toDTO(suggestion, 0, 0)).thenReturn(suggestionDTO);
+        when(suggestionVoteRepository.findUserVotesBySuggestionIds(any(UUID.class), anyList())).thenReturn(List.of());
+        when(suggestionMapper.toDTO(eq(suggestion), eq(0), eq(0), any())).thenReturn(suggestionDTO);
 
         Page<SuggestionDTO> result = suggestionService.getSuggestionDTOs(pageable);
 
@@ -264,11 +271,12 @@ class SuggestionServiceTest {
         PageRequest pageable = PageRequest.of(0, 10);
         Page<Suggestion> page = new PageImpl<>(List.of(suggestion));
 
-        SuggestionDTO fullDTO = new SuggestionDTO(3L, null, null, mock(dev.santiescobares.ubesweb.user.dto.UserSnapshotDTO.class), "contenido", 0, 0);
+        SuggestionDTO fullDTO = new SuggestionDTO(3L, null, null, mock(dev.santiescobares.ubesweb.user.dto.UserSnapshotDTO.class), "contenido", true, 0, 0, null, false);
 
         when(suggestionRepository.findAllByHiddenAtIsNull(pageable)).thenReturn(page);
         when(suggestionVoteRepository.getVoteStatsBySuggestionIds(List.of(3L))).thenReturn(List.of());
-        when(suggestionMapper.toDTO(suggestion, 0, 0)).thenReturn(fullDTO);
+        when(suggestionVoteRepository.findUserVotesBySuggestionIds(any(UUID.class), anyList())).thenReturn(List.of());
+        when(suggestionMapper.toDTO(eq(suggestion), eq(0), eq(0), any())).thenReturn(fullDTO);
 
         Page<SuggestionDTO> result = suggestionService.getSuggestionDTOs(pageable);
 
@@ -284,11 +292,12 @@ class SuggestionServiceTest {
         Page<Suggestion> page = new PageImpl<>(List.of(suggestion));
 
         dev.santiescobares.ubesweb.user.dto.UserSnapshotDTO author = mock(dev.santiescobares.ubesweb.user.dto.UserSnapshotDTO.class);
-        SuggestionDTO fullDTO = new SuggestionDTO(4L, null, null, author, "contenido", 0, 0);
+        SuggestionDTO fullDTO = new SuggestionDTO(4L, null, null, author, "contenido", true, 0, 0, null, false);
 
         when(suggestionRepository.findAll(pageable)).thenReturn(page);
         when(suggestionVoteRepository.getVoteStatsBySuggestionIds(List.of(4L))).thenReturn(List.of());
-        when(suggestionMapper.toDTO(suggestion, 0, 0)).thenReturn(fullDTO);
+        when(suggestionVoteRepository.findUserVotesBySuggestionIds(any(UUID.class), anyList())).thenReturn(List.of());
+        when(suggestionMapper.toDTO(eq(suggestion), eq(0), eq(0), any())).thenReturn(fullDTO);
 
         Page<SuggestionDTO> result = suggestionService.getSuggestionDTOs(pageable);
 
@@ -301,5 +310,70 @@ class SuggestionServiceTest {
 
         assertThatThrownBy(() -> suggestionService.voteSuggestion(99L, true))
                 .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    // --- getSuggestionsByDate ---
+
+    @Test
+    void getSuggestionsByDate_groupsSuggestionsByDateAndPaginates() {
+        RequestContextHolder.setCurrentSession(new RequestContextData(currentUserId, Role.USER, "test@ubes.com"));
+
+        LocalDate today = LocalDate.now(ZoneOffset.UTC);
+        LocalDate yesterday = today.minusDays(1);
+
+        Suggestion s1 = new Suggestion();
+        s1.setId(10L);
+        s1.setCreatedAt(today.atStartOfDay(ZoneOffset.UTC).toInstant());
+
+        Suggestion s2 = new Suggestion();
+        s2.setId(11L);
+        s2.setCreatedAt(yesterday.atStartOfDay(ZoneOffset.UTC).toInstant());
+
+        PageRequest pageable = PageRequest.of(0, 4);
+
+        when(suggestionRepository.findDistinctDatesPaged(0, 4, false)).thenReturn(List.of(today, yesterday));
+        when(suggestionRepository.countDistinctDates(false)).thenReturn(2L);
+        when(suggestionRepository.findAllByDates(List.of(today, yesterday), false)).thenReturn(List.of(s1, s2));
+        when(suggestionVoteRepository.getVoteStatsBySuggestionIds(List.of(10L, 11L))).thenReturn(List.of());
+        when(suggestionVoteRepository.findUserVotesBySuggestionIds(any(UUID.class), anyList())).thenReturn(List.of());
+
+        SuggestionDTO dto1 = new SuggestionDTO(10L, s1.getCreatedAt(), s1.getCreatedAt(), null, "a", false, 0, 0, null, false);
+        SuggestionDTO dto2 = new SuggestionDTO(11L, s2.getCreatedAt(), s2.getCreatedAt(), null, "b", false, 0, 0, null, false);
+        when(suggestionMapper.toDTO(eq(s1), eq(0), eq(0), any())).thenReturn(dto1);
+        when(suggestionMapper.toDTO(eq(s2), eq(0), eq(0), any())).thenReturn(dto2);
+
+        Page<SuggestionsByDateDTO> result = suggestionService.getSuggestionsByDate(pageable);
+
+        assertThat(result.getTotalElements()).isEqualTo(2);
+        assertThat(result.getContent()).hasSize(2);
+        assertThat(result.getContent().get(0).date()).isEqualTo(today);
+        assertThat(result.getContent().get(0).suggestions()).containsExactly(dto1);
+        assertThat(result.getContent().get(1).date()).isEqualTo(yesterday);
+        assertThat(result.getContent().get(1).suggestions()).containsExactly(dto2);
+    }
+
+    @Test
+    void getSuggestionDTOs_includesUserVoteForLoggedUser() {
+        RequestContextHolder.setCurrentSession(new RequestContextData(currentUserId, Role.USER, "test@ubes.com"));
+
+        Suggestion suggestion = new Suggestion();
+        suggestion.setId(20L);
+        PageRequest pageable = PageRequest.of(0, 10);
+        Page<Suggestion> page = new PageImpl<>(List.of(suggestion));
+
+        SuggestionDTO expectedDTO = new SuggestionDTO(20L, null, null, null, "x", false, 1, 1, true, false);
+
+        when(suggestionRepository.findAllByHiddenAtIsNull(pageable)).thenReturn(page);
+        when(suggestionVoteRepository.getVoteStatsBySuggestionIds(List.of(20L))).thenReturn(List.of());
+        List<Object[]> userVotes = new java.util.ArrayList<>();
+        userVotes.add(new Object[]{20L, true});
+        when(suggestionVoteRepository.findUserVotesBySuggestionIds(eq(currentUserId), anyList()))
+                .thenReturn(userVotes);
+        when(suggestionMapper.toDTO(eq(suggestion), eq(0), eq(0), eq(true))).thenReturn(expectedDTO);
+
+        Page<SuggestionDTO> result = suggestionService.getSuggestionDTOs(pageable);
+
+        assertThat(result.getContent().get(0).userVote()).isTrue();
+        verify(suggestionVoteRepository).findUserVotesBySuggestionIds(eq(currentUserId), anyList());
     }
 }
