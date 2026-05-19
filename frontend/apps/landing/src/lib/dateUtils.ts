@@ -60,6 +60,10 @@ export function formatPostDayLabel(iso: string): string {
   return year === new Date().getFullYear() ? base : `${base}, ${year}`
 }
 
+export function formatDayLabel(isoDate: string): string {
+  return formatPostDayLabel(`${isoDate}T00:00:00`)
+}
+
 export function formatPostTime(iso: string): string {
   return format(parseISO(iso), 'hh:mm a', { locale: es }).toUpperCase().replace(/\./g, '')
 }

@@ -73,12 +73,12 @@ export default function CalendarioPage() {
   return (
     <div
       className="page-fade-in"
-      style={{ minHeight: '100vh', paddingTop: '100px', paddingBottom: '32px', background: 'var(--bg)', color: 'var(--ink)' }}
+      style={{ minHeight: '100vh', paddingTop: '100px', paddingBottom: '32px', color: 'var(--ink)' }}
     >
       <div className="wrap">
 
         {/* Page header */}
-        <header className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <header className="inner-page-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div className="float-y-1">
               <div style={{
@@ -91,13 +91,9 @@ export default function CalendarioPage() {
                 </svg>
               </div>
             </div>
-            <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tighter">
-              Calendario.
-            </h1>
+            <h1 className="inner-page-title">CALENDARIO.</h1>
           </div>
-          <p className="text-base text-gray-600 font-medium max-w-md md:text-right">
-            Agenda oficial de asambleas, competencias y eventos comunitarios.
-          </p>
+          <p className="inner-page-subtitle">Agenda oficial de asambleas, competencias y eventos comunitarios.</p>
         </header>
 
         {/* Error state */}
