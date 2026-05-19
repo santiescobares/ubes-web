@@ -21,8 +21,10 @@ export default function Navbar() {
   const user = useAuthStore(s => s.user)
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
   const isInitialized = useAuthStore(s => s.isInitialized)
+  const { pathname } = useLocation()
 
   useEffect(() => {
+    if (pathname !== '/') { setInFooter(false); return }
     const footer = document.querySelector('footer')
     if (!footer) return
     const obs = new IntersectionObserver(
@@ -31,7 +33,7 @@ export default function Navbar() {
     )
     obs.observe(footer)
     return () => obs.disconnect()
-  }, [])
+  }, [pathname])
 
   return (
     <>
@@ -65,7 +67,7 @@ export default function Navbar() {
             <NavAnchorLink hash="inicio" className="nav-link y">Inicio</NavAnchorLink>
             <Link to="/calendario" className="nav-link r">Calendario</Link>
             <Link to="/novedades" className="nav-link b">Novedades</Link>
-            <NavAnchorLink hash="buzon" className="nav-link o">Buzón de Ideas</NavAnchorLink>
+            <Link to="/sugerencias" className="nav-link o">Buzón de Ideas</Link>
             <NavAnchorLink hash="historicos" className="nav-link g">Históricos</NavAnchorLink>
             <NavAnchorLink hash="informacion" className="nav-link p">Información</NavAnchorLink>
           </div>

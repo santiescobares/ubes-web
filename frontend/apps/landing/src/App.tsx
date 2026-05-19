@@ -6,6 +6,7 @@ import Footer from '@/components/layout/Footer'
 import LandingPage from '@/pages/LandingPage'
 import CalendarioPage from '@/pages/CalendarioPage'
 import NovedadesPage from '@/pages/NovedadesPage'
+import SugerenciasPage from '@/pages/SugerenciasPage'
 import LoginModal from '@/components/auth/LoginModal'
 import RegisterModal from '@/components/auth/RegisterModal'
 import ProfileModal from '@/components/profile/ProfileModal'
@@ -39,6 +40,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/calendario" element={<CalendarioPage />} />
         <Route path="/novedades" element={<NovedadesPage />} />
+        <Route path="/sugerencias" element={<SugerenciasPage />} />
       </Routes>
       <Footer />
       <LoginModal />

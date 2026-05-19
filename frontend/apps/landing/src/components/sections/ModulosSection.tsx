@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+
 export default function ModulosSection() {
   const linkStyle = {
     marginTop: '24px', display: 'inline-flex', alignItems: 'center', gap: '8px',
@@ -59,12 +61,12 @@ export default function ModulosSection() {
               <p style={{ fontSize: '15px', lineHeight: 1.7, color: '#666', fontWeight: 500, flex: 1 }}>
                 ¿Tenés una propuesta para mejorar UBES? Subila, hacé que otros estudiantes la voten y llevala a asamblea oficial.
               </p>
-              <a
-                href="#buzon"
+              <Link
+                to="/sugerencias"
                 style={linkStyle}
                 onMouseOver={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'var(--blue)' }}
                 onMouseOut={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'transparent' }}
-              >Proponer idea →</a>
+              >Proponer idea →</Link>
             </div>
           </div>
 
