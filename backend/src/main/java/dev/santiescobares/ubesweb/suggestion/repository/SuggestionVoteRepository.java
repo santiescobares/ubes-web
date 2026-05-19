@@ -18,4 +18,9 @@ public interface SuggestionVoteRepository extends JpaRepository<SuggestionVote, 
             "GROUP BY v.suggestion.id"
     )
     List<Object[]> getVoteStatsBySuggestionIds(@Param("suggestionIds") List<Long> suggestionIds);
+
+    @Query("SELECT v.suggestion.id, v.inFavor FROM SuggestionVote v " +
+            "WHERE v.voter.id = :voterId AND v.suggestion.id IN :suggestionIds")
+    List<Object[]> findUserVotesBySuggestionIds(@Param("voterId") UUID voterId,
+                                                @Param("suggestionIds") List<Long> suggestionIds);
 }

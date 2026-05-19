@@ -15,5 +15,5 @@ public interface SuggestionMapper {
 
     Suggestion toEntity(SuggestionCreateDTO dto);
 
-    SuggestionDTO toDTO(Suggestion suggestion, int totalVotes, int votesInFavor);
+    SuggestionDTO toDTO(Suggestion suggestion, int totalVotes, int votesInFavor, Boolean userVote);
 }

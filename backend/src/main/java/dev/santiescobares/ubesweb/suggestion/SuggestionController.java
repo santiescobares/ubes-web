@@ -3,6 +3,7 @@ package dev.santiescobares.ubesweb.suggestion;
 import dev.santiescobares.ubesweb.Global;
 import dev.santiescobares.ubesweb.suggestion.dto.SuggestionCreateDTO;
 import dev.santiescobares.ubesweb.suggestion.dto.SuggestionDTO;
+import dev.santiescobares.ubesweb.suggestion.dto.SuggestionsByDateDTO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -51,5 +52,12 @@ public class SuggestionController {
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         return ResponseEntity.ok(suggestionService.getSuggestionDTOs(pageable));
+    }
+
+    @GetMapping("/by-date")
+    public ResponseEntity<Page<SuggestionsByDateDTO>> getAllByDate(
+            @PageableDefault(size = 4) Pageable pageable
+    ) {
+        return ResponseEntity.ok(suggestionService.getSuggestionsByDate(pageable));
     }
 }

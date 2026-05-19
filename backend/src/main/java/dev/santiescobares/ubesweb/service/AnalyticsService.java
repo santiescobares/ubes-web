@@ -140,7 +140,7 @@ public class AnalyticsService {
         return suggestions.stream()
                 .map(suggestion -> {
                     VoteStats stat = statsMap.getOrDefault(suggestion.getId(), new VoteStats(0L, 0L));
-                    return suggestionMapper.toDTO(suggestion, stat.totalVotes().intValue(), stat.votesInFavor().intValue());
+                    return suggestionMapper.toDTO(suggestion, stat.totalVotes().intValue(), stat.votesInFavor().intValue(), null);
                 })
                 .toList();
     }

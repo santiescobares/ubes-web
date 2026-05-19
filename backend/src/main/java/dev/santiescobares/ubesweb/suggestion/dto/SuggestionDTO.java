@@ -10,7 +10,10 @@ public record SuggestionDTO(
         Instant updatedAt,
         UserSnapshotDTO createdBy,
         String content,
+        boolean anonymized,
         int totalVotes,
-        int votesInFavor
+        int votesInFavor,
+        Boolean userVote,
+        boolean hidden
 ) {
 }
